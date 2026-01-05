@@ -84,6 +84,15 @@ class OpenDotaClient {
     async getAbilities(): Promise<Record<string, unknown>> {
         return this.fetch('/constants/abilities');
     }
+
+    async getHeroItemPopularity(heroId: number): Promise<{
+        start_game_items: Record<string, number>;
+        early_game_items: Record<string, number>;
+        mid_game_items: Record<string, number>;
+        late_game_items: Record<string, number>;
+    }> {
+        return this.fetch(`/heroes/${heroId}/itemPopularity`);
+    }
 }
 
 export const openDota = new OpenDotaClient(process.env.OPENDOTA_API_KEY);

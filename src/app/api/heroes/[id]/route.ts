@@ -51,10 +51,34 @@ export async function GET(
             .sort((a, b) => b.winRate - a.winRate)
             .slice(0, 5);
 
+        // Fetch item popularity from OpenDota
+        let itemBuilds = null;
+        try {
+            const itemPopularity = await openDota.getHeroItemPopularity(heroId);
+
+            // Convert item IDs to sorted arrays with top items
+            const processItems = (items: Record<string, number>, limit: number = 6) => {
+                return Object.entries(items)
+                    .map(([itemId, count]) => ({ itemId: parseInt(itemId), count }))
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, limit);
+            };
+
+            itemBuilds = {
+                startGame: processItems(itemPopularity.start_game_items || {}, 4),
+                earlyGame: processItems(itemPopularity.early_game_items || {}, 6),
+                midGame: processItems(itemPopularity.mid_game_items || {}, 6),
+                lateGame: processItems(itemPopularity.late_game_items || {}, 6),
+            };
+        } catch (error) {
+            console.error('Error fetching item popularity:', error);
+        }
+
         return NextResponse.json({
             ...hero,
             counters,
             goodAgainst,
+            itemBuilds,
         });
     } catch (error) {
         console.error('Error fetching hero:', error);

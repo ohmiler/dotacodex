@@ -61,7 +61,8 @@
         "abilities": "สกิล",
         "tips": "เคล็ดลับ",
         "counters": "เคาน์เตอร์",
-        "synergies": "ทีมที่เข้ากัน"
+        "synergies": "ทีมที่เข้ากัน",
+        "itemBuild": "ไอเทมแนะนำ"
     },
     "items": {
         "title": "ไอเทม",

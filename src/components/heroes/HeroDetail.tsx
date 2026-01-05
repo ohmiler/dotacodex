@@ -12,22 +12,22 @@ interface Hero {
     primaryAttr: string;
     attackType: string;
     roles: string[];
-    img: string;
-    icon: string;
-    baseHealth: number;
-    baseMana: number;
-    baseArmor: number;
-    moveSpeed: number;
-    attackRange: number;
-    baseStr: number;
-    baseAgi: number;
-    baseInt: number;
-    strGain: number;
-    agiGain: number;
-    intGain: number;
-    difficulty?: number;
-    beginnerTips?: string;
-    beginnerTipsTh?: string;
+    img: string | null;
+    icon: string | null;
+    baseHealth: number | null;
+    baseMana: number | null;
+    baseArmor: number | null;
+    moveSpeed: number | null;
+    attackRange: number | null;
+    baseStr: number | null;
+    baseAgi: number | null;
+    baseInt: number | null;
+    strGain: number | null;
+    agiGain: number | null;
+    intGain: number | null;
+    difficulty?: number | null;
+    beginnerTips?: string | null;
+    beginnerTipsTh?: string | null;
 }
 
 interface MatchupHero {
@@ -37,37 +37,61 @@ interface MatchupHero {
     winRate: number;
 }
 
+interface ItemBuild {
+    itemId: number;
+    count: number;
+}
+
+interface ItemBuilds {
+    startGame: ItemBuild[];
+    earlyGame: ItemBuild[];
+    midGame: ItemBuild[];
+    lateGame: ItemBuild[];
+}
+
+interface Item {
+    id: number;
+    name: string;
+    localizedName: string | null;
+    cost: number | null;
+    img: string | null;
+}
+
 interface Props {
     hero: Hero;
     allHeroes: Hero[];
+    allItems?: Item[];
 }
 
-export default function HeroDetail({ hero, allHeroes }: Props) {
+export default function HeroDetail({ hero, allHeroes, allItems = [] }: Props) {
     const t = useTranslations();
     const [counters, setCounters] = useState<MatchupHero[]>([]);
     const [goodAgainst, setGoodAgainst] = useState<MatchupHero[]>([]);
+    const [itemBuilds, setItemBuilds] = useState<ItemBuilds | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchMatchups();
+        fetchHeroData();
     }, [hero.id]);
 
-    const fetchMatchups = async () => {
+    const fetchHeroData = async () => {
         try {
             const res = await fetch(`/api/heroes/${hero.id}`);
             if (res.ok) {
                 const data = await res.json();
                 setCounters(data.counters || []);
                 setGoodAgainst(data.goodAgainst || []);
+                setItemBuilds(data.itemBuilds || null);
             }
         } catch (error) {
-            console.error('Error fetching matchups:', error);
+            console.error('Error fetching hero data:', error);
         } finally {
             setLoading(false);
         }
     };
 
     const getHeroById = (id: number) => allHeroes.find(h => h.id === id);
+    const getItemById = (id: number) => allItems.find(i => i.id === id);
 
     const getAttrIcon = (attr: string) => {
         const icons: Record<string, string> = {
@@ -99,7 +123,7 @@ export default function HeroDetail({ hero, allHeroes }: Props) {
         return labels[attr] || attr;
     };
 
-    const getDifficultyLabel = (difficulty?: number) => {
+    const getDifficultyLabel = (difficulty?: number | null) => {
         if (!difficulty) return { label: t('heroes.medium'), color: 'var(--color-medium)' };
         if (difficulty === 1) return { label: t('heroes.easy'), color: 'var(--color-easy)' };
         if (difficulty === 2) return { label: t('heroes.medium'), color: 'var(--color-medium)' };
@@ -338,18 +362,71 @@ export default function HeroDetail({ hero, allHeroes }: Props) {
                         </div>
                     </div>
                 )}
+
+                {/* Item Build Guide Section */}
+                {itemBuilds && (
+                    <div className="mt-6">
+                        <div className="card p-6">
+                            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                                ⚔️ {t('heroes.itemBuild') || 'Recommended Item Build'}
+                            </h2>
+
+                            <div className="space-y-6">
+                                {/* Starting Items */}
+                                {itemBuilds.startGame.length > 0 && (
+                                    <ItemBuildSection
+                                        title="🏁 Starting Items"
+                                        items={itemBuilds.startGame}
+                                        allItems={allItems}
+                                        getItemById={getItemById}
+                                    />
+                                )}
+
+                                {/* Early Game */}
+                                {itemBuilds.earlyGame.length > 0 && (
+                                    <ItemBuildSection
+                                        title="🌅 Early Game"
+                                        items={itemBuilds.earlyGame}
+                                        allItems={allItems}
+                                        getItemById={getItemById}
+                                    />
+                                )}
+
+                                {/* Mid Game */}
+                                {itemBuilds.midGame.length > 0 && (
+                                    <ItemBuildSection
+                                        title="☀️ Mid Game"
+                                        items={itemBuilds.midGame}
+                                        allItems={allItems}
+                                        getItemById={getItemById}
+                                    />
+                                )}
+
+                                {/* Late Game */}
+                                {itemBuilds.lateGame.length > 0 && (
+                                    <ItemBuildSection
+                                        title="🌙 Late Game"
+                                        items={itemBuilds.lateGame}
+                                        allItems={allItems}
+                                        getItemById={getItemById}
+                                    />
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
 }
 
-function StatBox({ label, value, gain, color }: { label: string; value: number; gain?: number; color: string }) {
+function StatBox({ label, value, gain, color }: { label: string; value: number | null; gain?: number | null; color: string }) {
     return (
         <div className="p-3 rounded-lg bg-[var(--color-surface)]">
             <p className="text-sm text-[var(--color-text-muted)] mb-1">{label}</p>
             <p className="text-xl font-bold" style={{ color }}>
-                {value}
-                {gain !== undefined && (
+                {value ?? '-'}
+                {gain != null && (
                     <span className="text-sm font-normal text-[var(--color-text-muted)]"> +{gain}/lvl</span>
                 )}
             </p>
@@ -357,13 +434,59 @@ function StatBox({ label, value, gain, color }: { label: string; value: number; 
     );
 }
 
-function StatRow({ label, value, icon }: { label: string; value: number | string; icon: string }) {
+function StatRow({ label, value, icon }: { label: string; value: number | string | null | undefined; icon: string }) {
     return (
         <div className="flex items-center justify-between py-2 border-b border-[var(--color-border)] last:border-0">
             <span className="flex items-center gap-2 text-[var(--color-text-muted)]">
                 {icon} {label}
             </span>
-            <span className="font-semibold">{value}</span>
+            <span className="font-semibold">{value ?? '-'}</span>
+        </div>
+    );
+}
+
+interface ItemBuildSectionProps {
+    title: string;
+    items: { itemId: number; count: number }[];
+    allItems: Item[];
+    getItemById: (id: number) => Item | undefined;
+}
+
+function ItemBuildSection({ title, items, getItemById }: ItemBuildSectionProps) {
+    return (
+        <div>
+            <h3 className="text-sm font-medium text-[var(--color-text-muted)] mb-3">{title}</h3>
+            <div className="flex flex-wrap gap-2">
+                {items.map((item) => {
+                    const itemData = getItemById(item.itemId);
+                    if (!itemData) return null;
+                    const displayName = itemData.localizedName || itemData.name;
+                    const displayCost = itemData.cost ?? 0;
+                    return (
+                        <div
+                            key={item.itemId}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--color-surface-elevated)] hover:bg-[var(--color-accent-muted)] transition-colors"
+                            title={`${displayName} - ${displayCost} gold`}
+                        >
+                            {itemData.img ? (
+                                <img
+                                    src={itemData.img}
+                                    alt={displayName}
+                                    className="w-8 h-8 object-contain"
+                                />
+                            ) : (
+                                <span className="w-8 h-8 flex items-center justify-center text-lg">📦</span>
+                            )}
+                            <div className="hidden sm:block">
+                                <p className="text-xs font-medium">{displayName}</p>
+                                <p className="text-xs text-[var(--color-accent)]">
+                                    🪙 {displayCost.toLocaleString()}
+                                </p>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
 }

@@ -61,7 +61,8 @@
         "abilities": "Abilities",
         "tips": "Tips",
         "counters": "Counters",
-        "synergies": "Synergies"
+        "synergies": "Synergies",
+        "itemBuild": "Recommended Items"
     },
     "items": {
         "title": "Items",

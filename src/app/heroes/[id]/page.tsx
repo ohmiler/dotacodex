@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import HeroDetail from '@/components/heroes/HeroDetail';
 import { db } from '@/lib/db';
-import { heroes } from '@/lib/db/schema';
+import { heroes, items } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
 interface Props {
@@ -47,12 +47,25 @@ export default async function HeroPage({ params }: Props) {
     // Get all heroes for counter/synergy display
     const allHeroes = await db.select().from(heroes);
 
+    // Get all items for item build display
+    const allItems = await db.select().from(items);
+
+    // Map hero to expected type
+    const heroData = {
+        ...hero,
+        roles: hero.roles || [],
+    };
+
     return (
         <div className="min-h-screen">
             <Navbar />
             <main className="pt-20">
                 <Suspense fallback={<HeroDetailSkeleton />}>
-                    <HeroDetail hero={hero} allHeroes={allHeroes} />
+                    <HeroDetail
+                        hero={heroData}
+                        allHeroes={allHeroes.map(h => ({ ...h, roles: h.roles || [] }))}
+                        allItems={allItems}
+                    />
                 </Suspense>
             </main>
         </div>
