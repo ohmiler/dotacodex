@@ -34,7 +34,7 @@ export async function GET(request: Request) {
         // Filter by role (done in JS since roles is JSON)
         let filteredHeroes = heroList;
         if (role) {
-            filteredHeroes = heroList.filter(hero =>
+            filteredHeroes = heroList.filter((hero: typeof heroList[number]) =>
                 hero.roles && (hero.roles as string[]).includes(role)
             );
         }
