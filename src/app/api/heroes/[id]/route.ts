@@ -26,7 +26,7 @@ export async function GET(
         }
 
         // Fetch matchups from OpenDota
-        let matchups = [];
+        let matchups: { heroId: number; gamesPlayed: number; wins: number; winRate: number }[] = [];
         try {
             const matchupsData = await openDota.getHeroMatchups(heroId);
             // Get top 5 counters (heroes that beat this hero) and top 5 good against
