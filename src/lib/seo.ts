@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 // Base URL for the site
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://dotacodex.vercel.app';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://dotacodex.com';
 
 // Default SEO values
 export const defaultSEO: Metadata = {
