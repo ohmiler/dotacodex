@@ -63,7 +63,7 @@ export default async function HeroPage({ params }: Props) {
                 <Suspense fallback={<HeroDetailSkeleton />}>
                     <HeroDetail
                         hero={heroData}
-                        allHeroes={allHeroes.map(h => ({ ...h, roles: h.roles || [] }))}
+                        allHeroes={allHeroes.map((h: typeof allHeroes[number]) => ({ ...h, roles: h.roles || [] }))}
                         allItems={allItems}
                     />
                 </Suspense>
