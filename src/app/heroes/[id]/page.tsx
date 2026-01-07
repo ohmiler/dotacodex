@@ -10,7 +10,9 @@ interface Props {
     params: Promise<{ id: string }>;
 }
 
-export async function generateMetadata({ params }: Props) {
+import { Metadata } from 'next';
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { id } = await params;
     const heroId = parseInt(id);
 
@@ -22,9 +24,22 @@ export async function generateMetadata({ params }: Props) {
         return { title: 'Hero Not Found - DotaCodex' };
     }
 
+    const description = `เรียนรู้วิธีเล่น ${hero.localizedName} ใน Dota 2 - ${hero.primaryAttr} hero | Learn how to play ${hero.localizedName} with item builds, counters, and tips.`;
+
     return {
-        title: `${hero.localizedName} - DotaCodex`,
-        description: `Learn how to play ${hero.localizedName} in Dota 2. Stats, abilities, tips and counters.`,
+        title: `${hero.localizedName} - Hero Guide`,
+        description,
+        openGraph: {
+            title: `${hero.localizedName} | DotaCodex`,
+            description,
+            images: hero.img ? [{ url: hero.img, width: 256, height: 144, alt: hero.localizedName }] : undefined,
+        },
+        twitter: {
+            card: 'summary',
+            title: `${hero.localizedName} | DotaCodex`,
+            description,
+            images: hero.img ? [hero.img] : undefined,
+        },
     };
 }
 

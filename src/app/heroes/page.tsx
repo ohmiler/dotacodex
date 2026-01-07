@@ -1,6 +1,16 @@
+import { Metadata } from 'next';
 import { useTranslations } from 'next-intl';
 import Navbar from '@/components/layout/Navbar';
 import HeroGrid from '@/components/heroes/HeroGrid';
+
+export const metadata: Metadata = {
+    title: 'ฮีโร่ทั้งหมด - All Heroes',
+    description: 'ค้นพบฮีโร่กว่า 120 ตัวใน Dota 2 พร้อมสถิติ สกิล และคำแนะนำสำหรับผู้เล่นใหม่ | Discover all 120+ Dota 2 heroes with stats, abilities, and beginner tips.',
+    openGraph: {
+        title: 'All Heroes | DotaCodex',
+        description: 'ค้นพบฮีโร่กว่า 120 ตัวใน Dota 2 พร้อมสถิติ สกิล และคำแนะนำ',
+    },
+};
 
 export default function HeroesPage() {
     const t = useTranslations('heroes');
