@@ -5,8 +5,21 @@ import openDota from '@/lib/opendota';
 
 // Sync heroes and items from OpenDota API
 // This endpoint should be called periodically or manually to update the cache
-export async function POST() {
+// Protected by API key - set SYNC_API_KEY in environment variables
+export async function POST(request: Request) {
     try {
+        // Validate API key
+        const apiKey = request.headers.get('x-api-key');
+        const expectedKey = process.env.SYNC_API_KEY;
+
+        // If SYNC_API_KEY is set, require it for authentication
+        if (expectedKey && apiKey !== expectedKey) {
+            return NextResponse.json(
+                { error: 'Unauthorized. Invalid or missing API key.' },
+                { status: 401 }
+            );
+        }
+
         // Sync Heroes
         const openDotaHeroes = await openDota.getHeroes();
 
