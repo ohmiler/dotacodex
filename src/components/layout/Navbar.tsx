@@ -49,9 +49,15 @@ export default function Navbar() {
                         <LanguageSwitcher />
                         {session ? (
                             <>
-                                <span className="text-sm text-[var(--color-text-muted)]">
-                                    {session.user?.name || session.user?.email}
-                                </span>
+                                <Link
+                                    href="/profile"
+                                    className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors flex items-center gap-2"
+                                >
+                                    <span className="w-7 h-7 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-xs font-bold text-[var(--color-background)]">
+                                        {(session.user?.name || session.user?.email || '?').charAt(0).toUpperCase()}
+                                    </span>
+                                    <span>{session.user?.name || session.user?.email}</span>
+                                </Link>
                                 <button
                                     onClick={() => signOut()}
                                     className="btn btn-secondary text-sm py-2 px-4"
@@ -100,14 +106,23 @@ export default function Navbar() {
                                     {item.label}
                                 </Link>
                             ))}
-                            <div className="flex gap-2 mt-4 px-4">
+                            <div className="flex flex-col gap-2 mt-4 px-4">
                                 {session ? (
-                                    <button
-                                        onClick={() => signOut()}
-                                        className="btn btn-secondary flex-1 text-sm py-2"
-                                    >
-                                        {t('common.logout')}
-                                    </button>
+                                    <>
+                                        <Link
+                                            href="/profile"
+                                            className="btn btn-primary text-sm py-2 text-center"
+                                            onClick={() => setIsMenuOpen(false)}
+                                        >
+                                            👤 โปรไฟล์
+                                        </Link>
+                                        <button
+                                            onClick={() => signOut()}
+                                            className="btn btn-secondary text-sm py-2"
+                                        >
+                                            {t('common.logout')}
+                                        </button>
+                                    </>
                                 ) : (
                                     <>
                                         <Link href="/auth/login" className="btn btn-secondary flex-1 text-sm py-2">
