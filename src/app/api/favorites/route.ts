@@ -1,16 +1,24 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { NextRequest, NextResponse } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 import { db } from '@/lib/db';
 import { userBookmarks, heroes } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 
-// GET - Get user's favorite heroes
-export async function GET() {
-    try {
-        const session = await getServerSession(authOptions);
+// Helper function to get user ID from JWT token
+async function getUserIdFromToken(request: NextRequest): Promise<string | null> {
+    const token = await getToken({
+        req: request,
+        secret: process.env.NEXTAUTH_SECRET || 'development-secret-key',
+    });
+    return token?.id as string || null;
+}
 
-        if (!session?.user?.id) {
+// GET - Get user's favorite heroes
+export async function GET(request: NextRequest) {
+    try {
+        const userId = await getUserIdFromToken(request);
+
+        if (!userId) {
             return NextResponse.json(
                 { error: 'Unauthorized' },
                 { status: 401 }
@@ -34,12 +42,7 @@ export async function GET() {
             })
             .from(userBookmarks)
             .leftJoin(heroes, eq(userBookmarks.heroId, heroes.id))
-            .where(
-                and(
-                    eq(userBookmarks.userId, session.user.id),
-                    // Only get hero bookmarks (heroId is not null)
-                )
-            );
+            .where(eq(userBookmarks.userId, userId));
 
         // Filter to only hero bookmarks
         const heroFavorites = favorites.filter((f: typeof favorites[number]) => f.heroId !== null);
@@ -58,11 +61,11 @@ export async function GET() {
 }
 
 // POST - Add a hero to favorites
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
+        const userId = await getUserIdFromToken(request);
 
-        if (!session?.user?.id) {
+        if (!userId) {
             return NextResponse.json(
                 { error: 'Unauthorized' },
                 { status: 401 }
@@ -82,7 +85,7 @@ export async function POST(request: Request) {
         // Check if already favorited
         const existing = await db.query.userBookmarks.findFirst({
             where: and(
-                eq(userBookmarks.userId, session.user.id),
+                eq(userBookmarks.userId, userId),
                 eq(userBookmarks.heroId, heroId)
             ),
         });
@@ -96,7 +99,7 @@ export async function POST(request: Request) {
 
         // Add to favorites
         await db.insert(userBookmarks).values({
-            userId: session.user.id,
+            userId: userId,
             heroId: heroId,
         });
 
@@ -114,11 +117,11 @@ export async function POST(request: Request) {
 }
 
 // DELETE - Remove a hero from favorites
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
+        const userId = await getUserIdFromToken(request);
 
-        if (!session?.user?.id) {
+        if (!userId) {
             return NextResponse.json(
                 { error: 'Unauthorized' },
                 { status: 401 }
@@ -140,7 +143,7 @@ export async function DELETE(request: Request) {
             .delete(userBookmarks)
             .where(
                 and(
-                    eq(userBookmarks.userId, session.user.id),
+                    eq(userBookmarks.userId, userId),
                     eq(userBookmarks.heroId, heroId)
                 )
             );
