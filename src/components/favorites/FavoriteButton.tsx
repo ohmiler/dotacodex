@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 
 interface FavoriteButtonProps {
     heroId: number;
@@ -19,15 +19,19 @@ export default function FavoriteButton({
     const { data: session, status } = useSession();
     const [isFavorite, setIsFavorite] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isChecking, setIsChecking] = useState(true);
 
     // Check if hero is favorited on mount
     useEffect(() => {
         if (status === 'authenticated') {
             checkFavoriteStatus();
+        } else if (status === 'unauthenticated') {
+            setIsChecking(false);
         }
     }, [status, heroId]);
 
     const checkFavoriteStatus = async () => {
+        setIsChecking(true);
         try {
             const response = await fetch('/api/favorites');
             if (response.ok) {
@@ -37,12 +41,18 @@ export default function FavoriteButton({
             }
         } catch (error) {
             console.error('Error checking favorite status:', error);
+        } finally {
+            setIsChecking(false);
         }
     };
 
-    const toggleFavorite = async () => {
+    const toggleFavorite = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // If not logged in, prompt to login
         if (status !== 'authenticated') {
-            // Could redirect to login or show a message
+            signIn();
             return;
         }
 
@@ -77,21 +87,19 @@ export default function FavoriteButton({
         }
     };
 
-    // Don't show button if not logged in
-    if (status !== 'authenticated') {
-        return null;
-    }
-
     const sizeClasses = {
         sm: 'w-8 h-8 text-lg',
         md: 'w-10 h-10 text-xl',
         lg: 'w-12 h-12 text-2xl',
     };
 
+    const isDisabled = isLoading || (status === 'loading') || isChecking;
+
     return (
         <button
             onClick={toggleFavorite}
-            disabled={isLoading}
+            disabled={isDisabled}
+            type="button"
             className={`
                 ${sizeClasses[size]}
                 flex items-center justify-center gap-2
@@ -101,12 +109,18 @@ export default function FavoriteButton({
                     ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30'
                     : 'bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)] hover:text-red-500 hover:bg-red-500/10'
                 }
-                ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                 ${showLabel ? 'w-auto px-4' : ''}
             `}
-            title={isFavorite ? `Remove ${heroName || 'hero'} from favorites` : `Add ${heroName || 'hero'} to favorites`}
+            title={
+                status !== 'authenticated'
+                    ? 'Login to add favorites'
+                    : isFavorite
+                        ? `Remove ${heroName || 'hero'} from favorites`
+                        : `Add ${heroName || 'hero'} to favorites`
+            }
         >
-            <span className={isLoading ? 'animate-pulse' : ''}>
+            <span className={isLoading || isChecking ? 'animate-pulse' : ''}>
                 {isFavorite ? '❤️' : '🤍'}
             </span>
             {showLabel && (
