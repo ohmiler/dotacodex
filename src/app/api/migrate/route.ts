@@ -21,9 +21,14 @@ export async function POST(request: NextRequest) {
 
         console.log('[Migrate] Starting database migration...');
 
-        // Create user_progress table if not exists
+        // Drop existing table to recreate with correct schema
+        console.log('[Migrate] Dropping existing user_progress table...');
+        await db.run(sql`DROP TABLE IF EXISTS user_progress`);
+
+        // Create user_progress table with exact column names matching drizzle schema
+        console.log('[Migrate] Creating user_progress table...');
         await db.run(sql`
-            CREATE TABLE IF NOT EXISTS user_progress (
+            CREATE TABLE user_progress (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id TEXT NOT NULL,
                 topic_id INTEGER NOT NULL,
@@ -32,7 +37,7 @@ export async function POST(request: NextRequest) {
                 completed_at INTEGER
             )
         `);
-        console.log('[Migrate] user_progress table created/verified');
+        console.log('[Migrate] user_progress table created');
 
         // Create indexes
         await db.run(sql`
@@ -41,11 +46,11 @@ export async function POST(request: NextRequest) {
         await db.run(sql`
             CREATE INDEX IF NOT EXISTS idx_user_progress_topic_id ON user_progress(topic_id)
         `);
-        console.log('[Migrate] Indexes created/verified');
+        console.log('[Migrate] Indexes created');
 
         return NextResponse.json({
             success: true,
-            message: 'Database migration completed successfully',
+            message: 'Database migration completed - table recreated',
             tables: ['user_progress'],
         });
     } catch (error) {
