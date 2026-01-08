@@ -66,10 +66,14 @@ export async function GET(request: NextRequest) {
 
 // POST - Mark a topic as complete
 export async function POST(request: NextRequest) {
+    console.log('[Progress API] POST request received');
+
     try {
         const userId = await getUserIdFromToken(request);
+        console.log('[Progress API] User ID:', userId);
 
         if (!userId) {
+            console.log('[Progress API] No user ID - returning 401');
             return NextResponse.json(
                 { error: 'Unauthorized' },
                 { status: 401 }
@@ -78,8 +82,10 @@ export async function POST(request: NextRequest) {
 
         const body = await request.json();
         const { topicSlug, completed = true } = body;
+        console.log('[Progress API] Topic slug:', topicSlug, 'Completed:', completed);
 
         if (!topicSlug || typeof topicSlug !== 'string') {
+            console.log('[Progress API] Invalid topicSlug');
             return NextResponse.json(
                 { error: 'Invalid topicSlug' },
                 { status: 400 }
@@ -88,38 +94,60 @@ export async function POST(request: NextRequest) {
 
         // Convert slug to numeric ID for database
         const topicId = slugToId(topicSlug);
+        console.log('[Progress API] Topic ID (hash):', topicId);
 
         // Check if progress record exists
-        const existingRecords = await db
-            .select()
-            .from(userProgress)
-            .where(
-                and(
-                    eq(userProgress.userId, userId),
-                    eq(userProgress.topicId, topicId)
+        console.log('[Progress API] Checking existing record...');
+        let existing = null;
+        try {
+            const existingRecords = await db
+                .select()
+                .from(userProgress)
+                .where(
+                    and(
+                        eq(userProgress.userId, userId),
+                        eq(userProgress.topicId, topicId)
+                    )
                 )
-            )
-            .limit(1);
-
-        const existing = existingRecords[0];
+                .limit(1);
+            existing = existingRecords[0];
+            console.log('[Progress API] Existing record:', existing ? 'found' : 'not found');
+        } catch (selectError) {
+            console.error('[Progress API] Select error:', selectError);
+            throw selectError;
+        }
 
         if (existing) {
             // Update existing record
-            await db
-                .update(userProgress)
-                .set({
-                    completed: completed,
-                    completedAt: completed ? new Date() : null,
-                })
-                .where(eq(userProgress.id, existing.id));
+            console.log('[Progress API] Updating existing record ID:', existing.id);
+            try {
+                await db
+                    .update(userProgress)
+                    .set({
+                        completed: completed,
+                        completedAt: completed ? new Date() : null,
+                    })
+                    .where(eq(userProgress.id, existing.id));
+                console.log('[Progress API] Update successful');
+            } catch (updateError) {
+                console.error('[Progress API] Update error:', updateError);
+                throw updateError;
+            }
         } else {
             // Create new progress record
-            await db.insert(userProgress).values({
-                userId: userId,
-                topicId: topicId,
-                completed: completed,
-                completedAt: completed ? new Date() : null,
-            });
+            console.log('[Progress API] Inserting new record...');
+            try {
+                await db.insert(userProgress).values({
+                    userId: userId,
+                    topicId: topicId,
+                    completed: completed,
+                    completedAt: completed ? new Date() : null,
+                });
+                console.log('[Progress API] Insert successful');
+            } catch (insertError) {
+                console.error('[Progress API] Insert error:', insertError);
+                throw insertError;
+            }
         }
 
         return NextResponse.json({
@@ -129,9 +157,12 @@ export async function POST(request: NextRequest) {
             message: completed ? 'Topic marked as complete' : 'Topic marked as incomplete',
         });
     } catch (error) {
-        console.error('Error updating progress:', error);
+        console.error('[Progress API] Error:', error);
         return NextResponse.json(
-            { error: 'Failed to update progress' },
+            {
+                error: 'Failed to update progress',
+                details: error instanceof Error ? error.message : 'Unknown error'
+            },
             { status: 500 }
         );
     }
