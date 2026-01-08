@@ -1,59 +1,53 @@
-import { Metadata } from 'next';
-import { getServerSession } from 'next-auth';
+'use client';
+
+import { useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
 import { redirect } from 'next/navigation';
-import { authOptions } from '@/lib/auth';
-import { db } from '@/lib/db';
-import { users, userBookmarks, heroes } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
 import Navbar from '@/components/layout/Navbar';
 import Image from 'next/image';
 import Link from 'next/link';
 
-export const metadata: Metadata = {
-    title: 'โปรไฟล์ - Profile',
-    description: 'Your DotaCodex profile and favorite heroes',
-};
-
-async function getUserData(userId: string) {
-    const user = await db.query.users.findFirst({
-        where: eq(users.id, userId),
-    });
-
-    const favorites = await db
-        .select({
-            heroId: userBookmarks.heroId,
-            createdAt: userBookmarks.createdAt,
-            hero: {
-                id: heroes.id,
-                name: heroes.name,
-                localizedName: heroes.localizedName,
-                primaryAttr: heroes.primaryAttr,
-                img: heroes.img,
-                icon: heroes.icon,
-            },
-        })
-        .from(userBookmarks)
-        .leftJoin(heroes, eq(userBookmarks.heroId, heroes.id))
-        .where(eq(userBookmarks.userId, userId));
-
-    return {
-        user,
-        favorites: favorites.filter((f: typeof favorites[number]) => f.heroId !== null),
-    };
+interface Favorite {
+    heroId: number;
+    createdAt: string;
+    hero: {
+        id: number;
+        name: string;
+        localizedName: string;
+        primaryAttr: string;
+        img: string | null;
+        icon: string | null;
+    } | null;
 }
 
-export default async function ProfilePage() {
-    const session = await getServerSession(authOptions);
+export default function ProfilePage() {
+    const { data: session, status } = useSession();
+    const [favorites, setFavorites] = useState<Favorite[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    if (!session?.user?.id) {
-        redirect('/auth/login');
-    }
+    useEffect(() => {
+        if (status === 'unauthenticated') {
+            redirect('/auth/login');
+        }
 
-    const { user, favorites } = await getUserData(session.user.id);
+        if (status === 'authenticated') {
+            fetchFavorites();
+        }
+    }, [status]);
 
-    if (!user) {
-        redirect('/auth/login');
-    }
+    const fetchFavorites = async () => {
+        try {
+            const response = await fetch('/api/favorites');
+            if (response.ok) {
+                const data = await response.json();
+                setFavorites(data.favorites || []);
+            }
+        } catch (error) {
+            console.error('Error fetching favorites:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const getAttrColor = (attr: string) => {
         switch (attr) {
@@ -63,6 +57,35 @@ export default async function ProfilePage() {
             default: return 'var(--color-text-muted)';
         }
     };
+
+    if (status === 'loading' || loading) {
+        return (
+            <div className="min-h-screen">
+                <Navbar />
+                <main className="pt-24 pb-16 px-4">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="animate-pulse">
+                            <div className="card p-8 mb-8">
+                                <div className="flex items-center gap-6">
+                                    <div className="w-20 h-20 rounded-full bg-[var(--color-surface-elevated)]" />
+                                    <div className="flex-1">
+                                        <div className="h-6 w-48 bg-[var(--color-surface-elevated)] rounded mb-2" />
+                                        <div className="h-4 w-32 bg-[var(--color-surface-elevated)] rounded" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        );
+    }
+
+    if (!session?.user) {
+        return null;
+    }
+
+    const user = session.user;
 
     return (
         <div className="min-h-screen">
@@ -85,13 +108,6 @@ export default async function ProfilePage() {
                                 </h1>
                                 <p className="text-[var(--color-text-muted)]">
                                     {user.email}
-                                </p>
-                                <p className="text-sm text-[var(--color-text-muted)] mt-2">
-                                    เข้าร่วมเมื่อ {user.createdAt ? new Date(user.createdAt).toLocaleDateString('th-TH', {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric',
-                                    }) : 'ไม่ทราบ'}
                                 </p>
                             </div>
                         </div>
@@ -150,7 +166,7 @@ export default async function ProfilePage() {
                             </div>
                         ) : (
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                                {favorites.map((fav: typeof favorites[number]) => (
+                                {favorites.map((fav) => (
                                     fav.hero && (
                                         <Link
                                             key={fav.heroId}
