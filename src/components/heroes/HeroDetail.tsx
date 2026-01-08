@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import FavoriteButton from '@/components/favorites/FavoriteButton';
 
 interface Hero {
     id: number;
@@ -204,6 +205,7 @@ export default function HeroDetail({ hero, allHeroes, allItems = [] }: Props) {
                         <div className="flex-1">
                             <div className="flex items-center gap-4 mb-4">
                                 <h1 className="text-3xl md:text-4xl font-bold">{hero.localizedName}</h1>
+                                <FavoriteButton heroId={hero.id} heroName={hero.localizedName} size="md" />
                                 <span className={`px-3 py-1 rounded-lg text-sm font-semibold ${getAttrClass(hero.primaryAttr)}`}>
                                     {getAttrIcon(hero.primaryAttr)} {getAttrLabel(hero.primaryAttr)}
                                 </span>
