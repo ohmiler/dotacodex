@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 
 export default function RegisterPage() {
     const t = useTranslations('auth');
@@ -24,8 +25,8 @@ export default function RegisterPage() {
             return;
         }
 
-        if (password.length < 6) {
-            setError('Password must be at least 6 characters');
+        if (password.length < 8) {
+            setError('Password must be at least 8 characters with uppercase, lowercase, and number');
             return;
         }
 
@@ -43,7 +44,19 @@ export default function RegisterPage() {
                 throw new Error(data.error || 'Registration failed');
             }
 
-            router.push('/auth/login?registered=true');
+            // Auto-login after successful registration
+            const signInResult = await signIn('credentials', {
+                email,
+                password,
+                redirect: false,
+            });
+
+            if (signInResult?.ok) {
+                router.push('/profile');
+            } else {
+                // If auto-login fails, redirect to login page
+                router.push('/auth/login?registered=true');
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {

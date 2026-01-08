@@ -150,7 +150,7 @@ export default async function ProfilePage() {
                             </div>
                         ) : (
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                                {favorites.map((fav) => (
+                                {favorites.map((fav: typeof favorites[number]) => (
                                     fav.hero && (
                                         <Link
                                             key={fav.heroId}
