@@ -23,6 +23,7 @@ interface Favorite {
 export default function ProfilePage() {
     const { data: session, status } = useSession();
     const [favorites, setFavorites] = useState<Favorite[]>([]);
+    const [completedLessons, setCompletedLessons] = useState(0);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -31,19 +32,27 @@ export default function ProfilePage() {
         }
 
         if (status === 'authenticated') {
-            fetchFavorites();
+            fetchUserData();
         }
     }, [status]);
 
-    const fetchFavorites = async () => {
+    const fetchUserData = async () => {
         try {
-            const response = await fetch('/api/favorites');
-            if (response.ok) {
-                const data = await response.json();
-                setFavorites(data.favorites || []);
+            // Fetch favorites
+            const favResponse = await fetch('/api/favorites');
+            if (favResponse.ok) {
+                const favData = await favResponse.json();
+                setFavorites(favData.favorites || []);
+            }
+
+            // Fetch progress
+            const progressResponse = await fetch('/api/progress');
+            if (progressResponse.ok) {
+                const progressData = await progressResponse.json();
+                setCompletedLessons(progressData.completedCount || 0);
             }
         } catch (error) {
-            console.error('Error fetching favorites:', error);
+            console.error('Error fetching user data:', error);
         } finally {
             setLoading(false);
         }
@@ -124,8 +133,8 @@ export default function ProfilePage() {
                             </div>
                         </div>
                         <div className="card p-4 text-center">
-                            <div className="text-3xl font-bold text-[var(--color-secondary)]">
-                                0
+                            <div className="text-3xl font-bold text-[var(--color-easy)]">
+                                {completedLessons}
                             </div>
                             <div className="text-sm text-[var(--color-text-muted)]">
                                 บทเรียนที่เรียนจบ

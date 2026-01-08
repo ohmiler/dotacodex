@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { LearningTopic } from '@/data/learningTopics';
+import ProgressButton from '@/components/learn/ProgressButton';
 
 interface Props {
     topic: LearningTopic;
@@ -121,7 +122,14 @@ export default function TopicContent({ topic, prevTopic, nextTopic }: Props) {
                         </span>
                     </div>
 
-                    <h1 className="text-3xl sm:text-4xl font-bold">{title}</h1>
+                    <h1 className="text-3xl sm:text-4xl font-bold mb-4">{title}</h1>
+
+                    {/* Progress Button */}
+                    <ProgressButton
+                        topicSlug={topic.id}
+                        topicTitle={title}
+                        size="md"
+                    />
                 </div>
             </div>
 
