@@ -90,12 +90,18 @@ export async function POST(request: NextRequest) {
         const topicId = slugToId(topicSlug);
 
         // Check if progress record exists
-        const existing = await db.query.userProgress.findFirst({
-            where: and(
-                eq(userProgress.userId, userId),
-                eq(userProgress.topicId, topicId)
-            ),
-        });
+        const existingRecords = await db
+            .select()
+            .from(userProgress)
+            .where(
+                and(
+                    eq(userProgress.userId, userId),
+                    eq(userProgress.topicId, topicId)
+                )
+            )
+            .limit(1);
+
+        const existing = existingRecords[0];
 
         if (existing) {
             // Update existing record
