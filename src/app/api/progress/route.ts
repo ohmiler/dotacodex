@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { db } from '@/lib/db';
-import { userProgress } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 
 // Helper function to get user ID from JWT token
 async function getUserIdFromToken(request: NextRequest): Promise<string | null> {
@@ -19,7 +18,7 @@ function slugToId(slug: string): number {
     for (let i = 0; i < slug.length; i++) {
         const char = slug.charCodeAt(i);
         hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32-bit integer
+        hash = hash & hash;
     }
     return Math.abs(hash);
 }
@@ -36,27 +35,28 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Get all progress for the user
-        const progress = await db
-            .select({
-                id: userProgress.id,
-                topicId: userProgress.topicId,
-                completed: userProgress.completed,
-                completedAt: userProgress.completedAt,
-            })
-            .from(userProgress)
-            .where(eq(userProgress.userId, userId));
+        // Use raw SQL for better Turso compatibility
+        const result = await db.run(sql`
+            SELECT id, user_id, topic_id, completed, completed_at 
+            FROM user_progress 
+            WHERE user_id = ${userId}
+        `);
 
-        // Count completed
-        const completedCount = progress.filter((p: typeof progress[number]) => p.completed).length;
+        const progress = result.rows || [];
+        const completedCount = progress.filter((p: Record<string, unknown>) => p.completed === 1).length;
 
         return NextResponse.json({
-            progress,
+            progress: progress.map((p: Record<string, unknown>) => ({
+                id: p.id,
+                topicId: p.topic_id,
+                completed: p.completed === 1,
+                completedAt: p.completed_at,
+            })),
             completedCount,
             totalCount: progress.length,
         });
     } catch (error) {
-        console.error('Error fetching progress:', error);
+        console.error('[Progress API] GET Error:', error);
         return NextResponse.json(
             { error: 'Failed to fetch progress' },
             { status: 500 }
@@ -73,7 +73,6 @@ export async function POST(request: NextRequest) {
         console.log('[Progress API] User ID:', userId);
 
         if (!userId) {
-            console.log('[Progress API] No user ID - returning 401');
             return NextResponse.json(
                 { error: 'Unauthorized' },
                 { status: 401 }
@@ -82,74 +81,49 @@ export async function POST(request: NextRequest) {
 
         const body = await request.json();
         const { topicSlug, completed = true } = body;
-        console.log('[Progress API] Topic slug:', topicSlug, 'Completed:', completed);
+        console.log('[Progress API] Topic slug:', topicSlug);
 
         if (!topicSlug || typeof topicSlug !== 'string') {
-            console.log('[Progress API] Invalid topicSlug');
             return NextResponse.json(
                 { error: 'Invalid topicSlug' },
                 { status: 400 }
             );
         }
 
-        // Convert slug to numeric ID for database
         const topicId = slugToId(topicSlug);
         console.log('[Progress API] Topic ID (hash):', topicId);
 
-        // Check if progress record exists
-        console.log('[Progress API] Checking existing record...');
-        let existing = null;
-        try {
-            const existingRecords = await db
-                .select()
-                .from(userProgress)
-                .where(
-                    and(
-                        eq(userProgress.userId, userId),
-                        eq(userProgress.topicId, topicId)
-                    )
-                )
-                .limit(1);
-            existing = existingRecords[0];
-            console.log('[Progress API] Existing record:', existing ? 'found' : 'not found');
-        } catch (selectError) {
-            console.error('[Progress API] Select error:', selectError);
-            throw selectError;
-        }
+        // Check if record exists using raw SQL
+        const existingResult = await db.run(sql`
+            SELECT id FROM user_progress 
+            WHERE user_id = ${userId} AND topic_id = ${topicId}
+            LIMIT 1
+        `);
+
+        const existing = existingResult.rows?.[0];
+        console.log('[Progress API] Existing record:', existing ? 'found' : 'not found');
+
+        const completedInt = completed ? 1 : 0;
+        const completedAt = completed ? Date.now() : null;
 
         if (existing) {
-            // Update existing record
-            console.log('[Progress API] Updating existing record ID:', existing.id);
-            try {
-                await db
-                    .update(userProgress)
-                    .set({
-                        completed: completed,
-                        completedAt: completed ? new Date() : null,
-                    })
-                    .where(eq(userProgress.id, existing.id));
-                console.log('[Progress API] Update successful');
-            } catch (updateError) {
-                console.error('[Progress API] Update error:', updateError);
-                throw updateError;
-            }
+            // Update using raw SQL
+            console.log('[Progress API] Updating record...');
+            await db.run(sql`
+                UPDATE user_progress 
+                SET completed = ${completedInt}, completed_at = ${completedAt}
+                WHERE id = ${existing.id}
+            `);
         } else {
-            // Create new progress record
+            // Insert using raw SQL
             console.log('[Progress API] Inserting new record...');
-            try {
-                await db.insert(userProgress).values({
-                    userId: userId,
-                    topicId: topicId,
-                    completed: completed,
-                    completedAt: completed ? new Date() : null,
-                });
-                console.log('[Progress API] Insert successful');
-            } catch (insertError) {
-                console.error('[Progress API] Insert error:', insertError);
-                throw insertError;
-            }
+            await db.run(sql`
+                INSERT INTO user_progress (user_id, topic_id, completed, completed_at)
+                VALUES (${userId}, ${topicId}, ${completedInt}, ${completedAt})
+            `);
         }
 
+        console.log('[Progress API] Success!');
         return NextResponse.json({
             success: true,
             topicId,
