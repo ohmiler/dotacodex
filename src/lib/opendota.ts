@@ -34,6 +34,42 @@ export interface OpenDotaItem {
     img: string;
 }
 
+export interface AbilityDetail {
+    dname?: string;
+    desc?: string;
+    behavior?: string | string[];
+    dmg_type?: string;
+    bkbpierce?: string;
+    dispellable?: string;
+    target_team?: string;
+    target_type?: string | string[];
+    mc?: string | string[];  // mana cost
+    cd?: string | string[];  // cooldown
+    img?: string;
+    attrib?: Array<{
+        key: string;
+        header: string;
+        value: string | string[];
+    }>;
+    lore?: string;
+    is_innate?: boolean;
+}
+
+export interface HeroAbilities {
+    abilities: string[];
+    talents: Array<{
+        name: string;
+        level: number;
+    }>;
+    facets?: Array<{
+        name: string;
+        icon: string;
+        color: string;
+        title: string;
+        description: string;
+    }>;
+}
+
 class OpenDotaClient {
     private baseUrl: string;
     private apiKey?: string;
@@ -111,8 +147,12 @@ class OpenDotaClient {
         return this.fetch<Record<string, OpenDotaItem>>('/constants/items');
     }
 
-    async getAbilities(): Promise<Record<string, unknown>> {
-        return this.fetch('/constants/abilities');
+    async getAbilities(): Promise<Record<string, AbilityDetail>> {
+        return this.fetch<Record<string, AbilityDetail>>('/constants/abilities');
+    }
+
+    async getHeroAbilitiesMapping(): Promise<Record<string, HeroAbilities>> {
+        return this.fetch<Record<string, HeroAbilities>>('/constants/hero_abilities');
     }
 
     async getHeroItemPopularity(heroId: number): Promise<{

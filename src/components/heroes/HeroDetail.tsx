@@ -57,6 +57,23 @@ interface Item {
     img: string | null;
 }
 
+interface HeroAbility {
+    name: string;
+    dname: string;
+    desc: string;
+    behavior?: string | string[];
+    dmg_type?: string;
+    mc?: string | string[];
+    cd?: string | string[];
+    img?: string;
+    is_innate?: boolean;
+    attrib?: Array<{
+        key: string;
+        header: string;
+        value: string | string[];
+    }>;
+}
+
 interface Props {
     hero: Hero;
     allHeroes: Hero[];
@@ -64,6 +81,7 @@ interface Props {
     counters?: MatchupHero[];
     goodAgainst?: MatchupHero[];
     itemBuilds?: ItemBuilds | null;
+    abilities?: HeroAbility[];
 }
 
 export default function HeroDetail({
@@ -72,7 +90,8 @@ export default function HeroDetail({
     allItems = [],
     counters = [],
     goodAgainst = [],
-    itemBuilds = null
+    itemBuilds = null,
+    abilities = []
 }: Props) {
     const t = useTranslations();
 
@@ -233,6 +252,80 @@ export default function HeroDetail({
                     </div>
                 </div>
             </div>
+
+            {/* Abilities Section */}
+            {abilities.length > 0 && (
+                <div className="max-w-7xl mx-auto px-4 py-8">
+                    <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                        🎯 สกิล (Abilities)
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {abilities.map((ability) => (
+                            <div
+                                key={ability.name}
+                                className="card p-4 flex gap-4 hover:border-[var(--color-primary)] transition-colors"
+                            >
+                                {/* Ability Icon */}
+                                <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-[var(--color-surface-elevated)]">
+                                    {ability.is_innate ? (
+                                        <Image
+                                            src="/icons/innate.png"
+                                            alt={ability.dname}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    ) : ability.img ? (
+                                        <Image
+                                            src={`https://cdn.cloudflare.steamstatic.com${ability.img}`}
+                                            alt={ability.dname}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    ) : null}
+                                </div>
+
+                                {/* Ability Info */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h3 className="font-semibold text-lg">{ability.dname}</h3>
+                                        {ability.dmg_type && (
+                                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ability.dmg_type === 'Magical' ? 'bg-blue-500/20 text-blue-400' :
+                                                ability.dmg_type === 'Physical' ? 'bg-red-500/20 text-red-400' :
+                                                    ability.dmg_type === 'Pure' ? 'bg-amber-500/20 text-amber-400' :
+                                                        'bg-gray-500/20 text-gray-400'
+                                                }`}>
+                                                {ability.dmg_type}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Description */}
+                                    <p className="text-sm text-[var(--color-text-muted)] mb-2 line-clamp-2">
+                                        {ability.desc}
+                                    </p>
+
+                                    {/* Mana & Cooldown */}
+                                    <div className="flex items-center gap-4 text-sm">
+                                        {ability.mc && (
+                                            <span className="flex items-center gap-1 text-blue-400">
+                                                💧 {Array.isArray(ability.mc) ? ability.mc.join('/') : ability.mc}
+                                            </span>
+                                        )}
+                                        {ability.cd && (
+                                            <span className="flex items-center gap-1 text-[var(--color-text-muted)]">
+                                                ⏱️ {Array.isArray(ability.cd) ? ability.cd.join('/') : ability.cd}s
+                                            </span>
+                                        )}
+                                        {!ability.cd && !ability.mc && (
+                                            <span className="text-[var(--color-text-muted)]">Passive</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Content Sections */}
             <div className="max-w-7xl mx-auto px-4 pb-16">

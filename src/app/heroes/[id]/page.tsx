@@ -110,6 +110,80 @@ const getCachedItemBuilds = async (heroId: number) => {
     return cached();
 };
 
+// Cache hero abilities for 24 hours
+const getCachedHeroAbilities = async (heroName: string) => {
+    const cached = unstable_cache(
+        async () => {
+            try {
+                // Fetch both endpoints in parallel
+                const [heroAbilitiesMapping, allAbilities] = await Promise.all([
+                    openDota.getHeroAbilitiesMapping(),
+                    openDota.getAbilities(),
+                ]);
+
+                // Get abilities for this hero (convert name to npc format)
+                const npcName = `npc_dota_hero_${heroName}`;
+                const heroAbilityList = heroAbilitiesMapping[npcName];
+
+                if (!heroAbilityList?.abilities) {
+                    return [];
+                }
+
+                // Get detailed info for each ability
+                type AbilityInfo = {
+                    name: string;
+                    dname: string;
+                    desc: string;
+                    behavior: string | string[] | undefined;
+                    dmg_type: string | undefined;
+                    mc: string | string[] | undefined;
+                    cd: string | string[] | undefined;
+                    img: string | undefined;
+                    is_innate: boolean;
+                    attrib: Array<{ key: string; header: string; value: string | string[] }> | undefined;
+                };
+
+                const abilities: AbilityInfo[] = heroAbilityList.abilities
+                    .map(abilityName => {
+                        const detail = allAbilities[abilityName];
+                        if (!detail) return null;
+
+                        // Skip hidden, generic, and talent abilities
+                        const behavior = Array.isArray(detail.behavior)
+                            ? detail.behavior
+                            : [detail.behavior];
+
+                        if (behavior.includes('Hidden')) return null;
+                        if (abilityName.includes('special_bonus')) return null;
+                        if (!detail.dname) return null;
+
+                        return {
+                            name: abilityName,
+                            dname: detail.dname,
+                            desc: detail.desc || '',
+                            behavior: detail.behavior,
+                            dmg_type: detail.dmg_type,
+                            mc: detail.mc,
+                            cd: detail.cd,
+                            img: detail.img,
+                            is_innate: detail.is_innate || false,
+                            attrib: detail.attrib,
+                        };
+                    })
+                    .filter((ability): ability is AbilityInfo => ability !== null);
+
+                return abilities;
+            } catch (error) {
+                console.error('Error fetching hero abilities:', error);
+                return [];
+            }
+        },
+        [`hero-abilities-${heroName}`],
+        { revalidate: 86400 }
+    );
+    return cached();
+};
+
 // Generate static pages for all heroes at build time
 export async function generateStaticParams() {
     const allHeroes = await db.select({ id: heroes.id }).from(heroes);
@@ -207,10 +281,14 @@ async function HeroDetailWithData({
     allHeroes: Parameters<typeof HeroDetail>[0]['allHeroes'];
     allItems: NonNullable<Parameters<typeof HeroDetail>[0]['allItems']>;
 }) {
+    // Extract hero name for abilities lookup (e.g., "Anti-Mage" -> "antimage")
+    const heroName = heroData.name.replace('npc_dota_hero_', '');
+
     // Fetch OpenDota data in parallel (with timeout and proper cache keys)
-    const [matchups, itemBuilds] = await Promise.all([
+    const [matchups, itemBuilds, abilities] = await Promise.all([
         getCachedMatchups(heroId),
         getCachedItemBuilds(heroId),
+        getCachedHeroAbilities(heroName),
     ]);
 
     return (
@@ -221,6 +299,7 @@ async function HeroDetailWithData({
             counters={matchups.counters}
             goodAgainst={matchups.goodAgainst}
             itemBuilds={itemBuilds}
+            abilities={abilities}
         />
     );
 }
