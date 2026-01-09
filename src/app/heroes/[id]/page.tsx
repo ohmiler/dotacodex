@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
+import { unstable_cache } from 'next/cache';
 import Navbar from '@/components/layout/Navbar';
 import HeroDetail from '@/components/heroes/HeroDetail';
 import { db } from '@/lib/db';
@@ -7,8 +8,37 @@ import { heroes, items } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { Metadata } from 'next';
 
-// Revalidate every 1 hour (ISR)
-export const revalidate = 3600;
+// Revalidate every 24 hours (reduced from 1 hour to save reads)
+export const revalidate = 86400;
+
+// Cache all heroes for 24 hours
+const getAllHeroes = unstable_cache(
+    async () => {
+        return await db.select().from(heroes);
+    },
+    ['all-heroes'],
+    { revalidate: 86400 }
+);
+
+// Cache all items for 24 hours
+const getAllItems = unstable_cache(
+    async () => {
+        return await db.select().from(items);
+    },
+    ['all-items'],
+    { revalidate: 86400 }
+);
+
+// Cache individual hero by ID for 24 hours
+const getHeroById = unstable_cache(
+    async (heroId: number) => {
+        return await db.query.heroes.findFirst({
+            where: eq(heroes.id, heroId),
+        });
+    },
+    ['hero-by-id'],
+    { revalidate: 86400 }
+);
 
 // Generate static pages for all heroes at build time
 export async function generateStaticParams() {
@@ -26,9 +56,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { id } = await params;
     const heroId = parseInt(id);
 
-    const hero = await db.query.heroes.findFirst({
-        where: eq(heroes.id, heroId),
-    });
+    const hero = await getHeroById(heroId);
 
     if (!hero) {
         return { title: 'Hero Not Found - DotaCodex' };
@@ -61,19 +89,16 @@ export default async function HeroPage({ params }: Props) {
         notFound();
     }
 
-    const hero = await db.query.heroes.findFirst({
-        where: eq(heroes.id, heroId),
-    });
+    // Use cached queries
+    const hero = await getHeroById(heroId);
 
     if (!hero) {
         notFound();
     }
 
-    // Get all heroes for counter/synergy display
-    const allHeroes = await db.select().from(heroes);
-
-    // Get all items for item build display
-    const allItems = await db.select().from(items);
+    // These are now cached - won't hit DB if already cached
+    const allHeroes = await getAllHeroes();
+    const allItems = await getAllItems();
 
     // Map hero to expected type
     const heroData = {
