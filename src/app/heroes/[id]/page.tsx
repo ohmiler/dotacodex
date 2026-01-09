@@ -5,12 +5,22 @@ import HeroDetail from '@/components/heroes/HeroDetail';
 import { db } from '@/lib/db';
 import { heroes, items } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { Metadata } from 'next';
+
+// Revalidate every 1 hour (ISR)
+export const revalidate = 3600;
+
+// Generate static pages for all heroes at build time
+export async function generateStaticParams() {
+    const allHeroes = await db.select({ id: heroes.id }).from(heroes);
+    return allHeroes.map((hero: { id: number }) => ({
+        id: String(hero.id),
+    }));
+}
 
 interface Props {
     params: Promise<{ id: string }>;
 }
-
-import { Metadata } from 'next';
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { id } = await params;

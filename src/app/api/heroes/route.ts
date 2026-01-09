@@ -3,6 +3,9 @@ import { db } from '@/lib/db';
 import { heroes } from '@/lib/db/schema';
 import { eq, like, or } from 'drizzle-orm';
 
+// Cache this API response for 1 hour
+export const revalidate = 3600;
+
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
