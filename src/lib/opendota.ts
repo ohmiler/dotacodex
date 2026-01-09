@@ -37,6 +37,7 @@ export interface OpenDotaItem {
 class OpenDotaClient {
     private baseUrl: string;
     private apiKey?: string;
+    private callCount = 0;
 
     constructor(apiKey?: string) {
         this.baseUrl = OPENDOTA_BASE_URL;
@@ -49,12 +50,24 @@ class OpenDotaClient {
             url.searchParams.set('api_key', this.apiKey);
         }
 
+        const startTime = Date.now();
         const response = await fetch(url.toString(), {
             next: { revalidate: 3600 }, // Cache for 1 hour
         });
 
+        const duration = Date.now() - startTime;
+        this.callCount++;
+
+        // Log API usage with rate limit info from headers
+        const remainingMinute = response.headers.get('X-Rate-Limit-Remaining-Minute');
+        const remainingDay = response.headers.get('X-Rate-Limit-Remaining-Day');
+
+        console.log(`[OpenDota API] ${endpoint} | ${response.status} | ${duration}ms | Remaining: ${remainingMinute}/min, ${remainingDay}/day | Session calls: ${this.callCount}`);
+
         if (!response.ok) {
-            throw new Error(`OpenDota API error: ${response.status} ${response.statusText}`);
+            const errorMsg = `OpenDota API error: ${response.status} ${response.statusText}`;
+            console.error(`[OpenDota API] ERROR: ${errorMsg}`);
+            throw new Error(errorMsg);
         }
 
         return response.json();
@@ -92,6 +105,11 @@ class OpenDotaClient {
         late_game_items: Record<string, number>;
     }> {
         return this.fetch(`/heroes/${heroId}/itemPopularity`);
+    }
+
+    // Get current session call count
+    getCallCount(): number {
+        return this.callCount;
     }
 }
 
