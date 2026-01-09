@@ -12,7 +12,7 @@ import openDota from '@/lib/opendota';
 // Revalidate every 24 hours
 export const revalidate = 86400;
 
-// Cache all heroes for 24 hours
+// Cache all heroes for 24 hours (shared across all pages)
 const getAllHeroes = unstable_cache(
     async () => {
         return await db.select().from(heroes);
@@ -21,7 +21,7 @@ const getAllHeroes = unstable_cache(
     { revalidate: 86400 }
 );
 
-// Cache all items for 24 hours
+// Cache all items for 24 hours (shared across all pages)
 const getAllItems = unstable_cache(
     async () => {
         return await db.select().from(items);
@@ -31,75 +31,84 @@ const getAllItems = unstable_cache(
 );
 
 // Cache individual hero by ID for 24 hours
-const getHeroById = unstable_cache(
-    async (heroId: number) => {
-        return await db.query.heroes.findFirst({
-            where: eq(heroes.id, heroId),
-        });
-    },
-    ['hero-by-id'],
-    { revalidate: 86400 }
-);
+const getHeroById = async (heroId: number) => {
+    const cached = unstable_cache(
+        async () => {
+            return await db.query.heroes.findFirst({
+                where: eq(heroes.id, heroId),
+            });
+        },
+        [`hero-${heroId}`],
+        { revalidate: 86400 }
+    );
+    return cached();
+};
 
-// Cache hero matchups for 24 hours
-const getCachedMatchups = unstable_cache(
-    async (heroId: number) => {
-        try {
-            const matchupsData = await openDota.getHeroMatchups(heroId);
-            const matchups = matchupsData
-                .map(m => ({
-                    heroId: m.hero_id,
-                    gamesPlayed: m.games_played,
-                    wins: m.wins,
-                    winRate: m.games_played > 0 ? (m.wins / m.games_played) * 100 : 0,
-                }))
-                .filter(m => m.gamesPlayed >= 100);
+// Cache hero matchups for 24 hours (with heroId in key)
+const getCachedMatchups = async (heroId: number) => {
+    const cached = unstable_cache(
+        async () => {
+            try {
+                const matchupsData = await openDota.getHeroMatchups(heroId);
+                const matchups = matchupsData
+                    .map(m => ({
+                        heroId: m.hero_id,
+                        gamesPlayed: m.games_played,
+                        wins: m.wins,
+                        winRate: m.games_played > 0 ? (m.wins / m.games_played) * 100 : 0,
+                    }))
+                    .filter(m => m.gamesPlayed >= 100);
 
-            const counters = [...matchups]
-                .sort((a, b) => a.winRate - b.winRate)
-                .slice(0, 5);
+                const counters = [...matchups]
+                    .sort((a, b) => a.winRate - b.winRate)
+                    .slice(0, 5);
 
-            const goodAgainst = [...matchups]
-                .sort((a, b) => b.winRate - a.winRate)
-                .slice(0, 5);
+                const goodAgainst = [...matchups]
+                    .sort((a, b) => b.winRate - a.winRate)
+                    .slice(0, 5);
 
-            return { counters, goodAgainst };
-        } catch (error) {
-            console.error('Error fetching matchups:', error);
-            return { counters: [], goodAgainst: [] };
-        }
-    },
-    ['hero-matchups'],
-    { revalidate: 86400 }
-);
+                return { counters, goodAgainst };
+            } catch (error) {
+                console.error('Error fetching matchups:', error);
+                return { counters: [], goodAgainst: [] };
+            }
+        },
+        [`hero-matchups-${heroId}`],
+        { revalidate: 86400 }
+    );
+    return cached();
+};
 
-// Cache hero item builds for 24 hours
-const getCachedItemBuilds = unstable_cache(
-    async (heroId: number) => {
-        try {
-            const itemPopularity = await openDota.getHeroItemPopularity(heroId);
+// Cache hero item builds for 24 hours (with heroId in key)
+const getCachedItemBuilds = async (heroId: number) => {
+    const cached = unstable_cache(
+        async () => {
+            try {
+                const itemPopularity = await openDota.getHeroItemPopularity(heroId);
 
-            const processItems = (itemsData: Record<string, number>, limit: number = 6) => {
-                return Object.entries(itemsData)
-                    .map(([itemId, count]) => ({ itemId: parseInt(itemId), count }))
-                    .sort((a, b) => b.count - a.count)
-                    .slice(0, limit);
-            };
+                const processItems = (itemsData: Record<string, number>, limit: number = 6) => {
+                    return Object.entries(itemsData)
+                        .map(([itemId, count]) => ({ itemId: parseInt(itemId), count }))
+                        .sort((a, b) => b.count - a.count)
+                        .slice(0, limit);
+                };
 
-            return {
-                startGame: processItems(itemPopularity.start_game_items || {}, 4),
-                earlyGame: processItems(itemPopularity.early_game_items || {}, 6),
-                midGame: processItems(itemPopularity.mid_game_items || {}, 6),
-                lateGame: processItems(itemPopularity.late_game_items || {}, 6),
-            };
-        } catch (error) {
-            console.error('Error fetching item popularity:', error);
-            return null;
-        }
-    },
-    ['hero-item-builds'],
-    { revalidate: 86400 }
-);
+                return {
+                    startGame: processItems(itemPopularity.start_game_items || {}, 4),
+                    earlyGame: processItems(itemPopularity.early_game_items || {}, 6),
+                    midGame: processItems(itemPopularity.mid_game_items || {}, 6),
+                    lateGame: processItems(itemPopularity.late_game_items || {}, 6),
+                };
+            } catch (error) {
+                console.error('Error fetching item popularity:', error);
+                return null;
+            }
+        },
+        [`hero-items-${heroId}`],
+        { revalidate: 86400 }
+    );
+    return cached();
+};
 
 // Generate static pages for all heroes at build time
 export async function generateStaticParams() {
@@ -198,7 +207,7 @@ async function HeroDetailWithData({
     allHeroes: Parameters<typeof HeroDetail>[0]['allHeroes'];
     allItems: NonNullable<Parameters<typeof HeroDetail>[0]['allItems']>;
 }) {
-    // Fetch OpenDota data (may be slow on cache miss)
+    // Fetch OpenDota data in parallel (with timeout and proper cache keys)
     const [matchups, itemBuilds] = await Promise.all([
         getCachedMatchups(heroId),
         getCachedItemBuilds(heroId),

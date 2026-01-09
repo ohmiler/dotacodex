@@ -38,6 +38,7 @@ class OpenDotaClient {
     private baseUrl: string;
     private apiKey?: string;
     private callCount = 0;
+    private timeout = 5000; // 5 second timeout
 
     constructor(apiKey?: string) {
         this.baseUrl = OPENDOTA_BASE_URL;
@@ -51,26 +52,42 @@ class OpenDotaClient {
         }
 
         const startTime = Date.now();
-        const response = await fetch(url.toString(), {
-            next: { revalidate: 3600 }, // Cache for 1 hour
-        });
 
-        const duration = Date.now() - startTime;
-        this.callCount++;
+        // Add timeout using AbortController
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
-        // Log API usage with rate limit info from headers
-        const remainingMinute = response.headers.get('X-Rate-Limit-Remaining-Minute');
-        const remainingDay = response.headers.get('X-Rate-Limit-Remaining-Day');
+        try {
+            const response = await fetch(url.toString(), {
+                next: { revalidate: 86400 }, // Cache for 24 hours
+                signal: controller.signal,
+            });
 
-        console.log(`[OpenDota API] ${endpoint} | ${response.status} | ${duration}ms | Remaining: ${remainingMinute}/min, ${remainingDay}/day | Session calls: ${this.callCount}`);
+            clearTimeout(timeoutId);
+            const duration = Date.now() - startTime;
+            this.callCount++;
 
-        if (!response.ok) {
-            const errorMsg = `OpenDota API error: ${response.status} ${response.statusText}`;
-            console.error(`[OpenDota API] ERROR: ${errorMsg}`);
-            throw new Error(errorMsg);
+            // Log API usage with rate limit info from headers
+            const remainingMinute = response.headers.get('X-Rate-Limit-Remaining-Minute');
+            const remainingDay = response.headers.get('X-Rate-Limit-Remaining-Day');
+
+            console.log(`[OpenDota API] ${endpoint} | ${response.status} | ${duration}ms | Remaining: ${remainingMinute}/min, ${remainingDay}/day | Session calls: ${this.callCount}`);
+
+            if (!response.ok) {
+                const errorMsg = `OpenDota API error: ${response.status} ${response.statusText}`;
+                console.error(`[OpenDota API] ERROR: ${errorMsg}`);
+                throw new Error(errorMsg);
+            }
+
+            return response.json();
+        } catch (error) {
+            clearTimeout(timeoutId);
+            if (error instanceof Error && error.name === 'AbortError') {
+                console.error(`[OpenDota API] TIMEOUT: ${endpoint} took longer than ${this.timeout}ms`);
+                throw new Error(`OpenDota API timeout: ${endpoint}`);
+            }
+            throw error;
         }
-
-        return response.json();
     }
 
     async getHeroes(): Promise<OpenDotaHero[]> {
