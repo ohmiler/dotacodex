@@ -2,31 +2,36 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { sql } from 'drizzle-orm';
 
-// Secret key to prevent unauthorized access
-const MIGRATE_SECRET = process.env.MIGRATE_SECRET || 'dotacodex-migrate-2024';
-
-// POST - Run database migrations
+// POST - Run database migrations (Production requires MIGRATE_SECRET env var)
 export async function POST(request: NextRequest) {
     try {
-        // Check authorization
-        const { searchParams } = new URL(request.url);
-        const secret = searchParams.get('secret');
+        // In production, require explicit MIGRATE_SECRET
+        if (process.env.NODE_ENV === 'production') {
+            const migrateSecret = process.env.MIGRATE_SECRET;
+            if (!migrateSecret) {
+                return NextResponse.json(
+                    { error: 'Migration endpoint disabled - MIGRATE_SECRET not configured' },
+                    { status: 403 }
+                );
+            }
 
-        if (secret !== MIGRATE_SECRET) {
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            );
+            const { searchParams } = new URL(request.url);
+            const secret = searchParams.get('secret');
+
+            if (secret !== migrateSecret) {
+                return NextResponse.json(
+                    { error: 'Unauthorized' },
+                    { status: 401 }
+                );
+            }
         }
 
         console.log('[Migrate] Starting database migration...');
 
         // Drop existing table to recreate with correct schema
-        console.log('[Migrate] Dropping existing user_progress table...');
         await db.run(sql`DROP TABLE IF EXISTS user_progress`);
 
-        // Create user_progress table with exact column names matching drizzle schema
-        console.log('[Migrate] Creating user_progress table...');
+        // Create user_progress table
         await db.run(sql`
             CREATE TABLE user_progress (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,7 +42,6 @@ export async function POST(request: NextRequest) {
                 completed_at INTEGER
             )
         `);
-        console.log('[Migrate] user_progress table created');
 
         // Create indexes
         await db.run(sql`
@@ -46,7 +50,6 @@ export async function POST(request: NextRequest) {
         await db.run(sql`
             CREATE INDEX IF NOT EXISTS idx_user_progress_topic_id ON user_progress(topic_id)
         `);
-        console.log('[Migrate] Indexes created');
 
         return NextResponse.json({
             success: true,
@@ -55,27 +58,38 @@ export async function POST(request: NextRequest) {
         });
     } catch (error) {
         console.error('[Migrate] Error:', error);
+        const errorMessage = process.env.NODE_ENV === 'production'
+            ? 'Migration failed'
+            : (error instanceof Error ? error.message : 'Unknown error');
         return NextResponse.json(
-            {
-                error: 'Migration failed',
-                details: error instanceof Error ? error.message : 'Unknown error'
-            },
+            { error: 'Migration failed', details: errorMessage },
             { status: 500 }
         );
     }
 }
 
-// GET - Check migration status
+// GET - Check migration status (Production requires MIGRATE_SECRET)
 export async function GET(request: NextRequest) {
     try {
-        const { searchParams } = new URL(request.url);
-        const secret = searchParams.get('secret');
+        // In production, require explicit MIGRATE_SECRET
+        if (process.env.NODE_ENV === 'production') {
+            const migrateSecret = process.env.MIGRATE_SECRET;
+            if (!migrateSecret) {
+                return NextResponse.json(
+                    { error: 'Endpoint disabled' },
+                    { status: 403 }
+                );
+            }
 
-        if (secret !== MIGRATE_SECRET) {
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            );
+            const { searchParams } = new URL(request.url);
+            const secret = searchParams.get('secret');
+
+            if (secret !== migrateSecret) {
+                return NextResponse.json(
+                    { error: 'Unauthorized' },
+                    { status: 401 }
+                );
+            }
         }
 
         // Check if tables exist
@@ -86,7 +100,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             success: true,
             tables: {
-                user_progress: result.rows?.length > 0 || false,
+                user_progress: (result.rows?.length ?? 0) > 0,
             },
         });
     } catch (error) {

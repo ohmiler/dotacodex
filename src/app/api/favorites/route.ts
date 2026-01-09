@@ -6,9 +6,13 @@ import { eq, and } from 'drizzle-orm';
 
 // Helper function to get user ID from JWT token
 async function getUserIdFromToken(request: NextRequest): Promise<string | null> {
+    if (!process.env.NEXTAUTH_SECRET) {
+        console.error('[Favorites API] NEXTAUTH_SECRET is not configured');
+        return null;
+    }
     const token = await getToken({
         req: request,
-        secret: process.env.NEXTAUTH_SECRET || 'development-secret-key',
+        secret: process.env.NEXTAUTH_SECRET,
     });
     return token?.id as string || null;
 }

@@ -3,11 +3,17 @@ import { getToken } from 'next-auth/jwt';
 import { db } from '@/lib/db';
 import { sql } from 'drizzle-orm';
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 // Helper function to get user ID from JWT token
 async function getUserIdFromToken(request: NextRequest): Promise<string | null> {
+    if (!process.env.NEXTAUTH_SECRET) {
+        console.error('[Progress API] NEXTAUTH_SECRET is not configured');
+        return null;
+    }
     const token = await getToken({
         req: request,
-        secret: process.env.NEXTAUTH_SECRET || 'development-secret-key',
+        secret: process.env.NEXTAUTH_SECRET,
     });
     return token?.id as string || null;
 }
@@ -66,11 +72,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Mark a topic as complete
 export async function POST(request: NextRequest) {
-    console.log('[Progress API] POST request received');
-
     try {
         const userId = await getUserIdFromToken(request);
-        console.log('[Progress API] User ID:', userId);
 
         if (!userId) {
             return NextResponse.json(
@@ -81,7 +84,6 @@ export async function POST(request: NextRequest) {
 
         const body = await request.json();
         const { topicSlug, completed = true } = body;
-        console.log('[Progress API] Topic slug:', topicSlug);
 
         if (!topicSlug || typeof topicSlug !== 'string') {
             return NextResponse.json(
@@ -91,7 +93,6 @@ export async function POST(request: NextRequest) {
         }
 
         const topicId = slugToId(topicSlug);
-        console.log('[Progress API] Topic ID (hash):', topicId);
 
         // Check if record exists using raw SQL
         const existingResult = await db.run(sql`
@@ -101,14 +102,11 @@ export async function POST(request: NextRequest) {
         `);
 
         const existing = existingResult.rows?.[0];
-        console.log('[Progress API] Existing record:', existing ? 'found' : 'not found');
-
         const completedInt = completed ? 1 : 0;
         const completedAt = completed ? Date.now() : null;
 
         if (existing) {
             // Update using raw SQL
-            console.log('[Progress API] Updating record...');
             await db.run(sql`
                 UPDATE user_progress 
                 SET completed = ${completedInt}, completed_at = ${completedAt}
@@ -116,14 +114,12 @@ export async function POST(request: NextRequest) {
             `);
         } else {
             // Insert using raw SQL
-            console.log('[Progress API] Inserting new record...');
             await db.run(sql`
                 INSERT INTO user_progress (user_id, topic_id, completed, completed_at)
                 VALUES (${userId}, ${topicId}, ${completedInt}, ${completedAt})
             `);
         }
 
-        console.log('[Progress API] Success!');
         return NextResponse.json({
             success: true,
             topicId,
@@ -132,10 +128,12 @@ export async function POST(request: NextRequest) {
         });
     } catch (error) {
         console.error('[Progress API] Error:', error);
+        // Hide error details in production
+        const errorDetails = isDev && error instanceof Error ? error.message : undefined;
         return NextResponse.json(
             {
                 error: 'Failed to update progress',
-                details: error instanceof Error ? error.message : 'Unknown error'
+                ...(errorDetails && { details: errorDetails }),
             },
             { status: 500 }
         );

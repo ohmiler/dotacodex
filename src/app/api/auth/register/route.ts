@@ -12,13 +12,7 @@ export async function POST(request: Request) {
             );
         }
 
-        if (password.length < 6) {
-            return NextResponse.json(
-                { error: 'Password must be at least 6 characters' },
-                { status: 400 }
-            );
-        }
-
+        // registerUser includes proper validation from validation.ts
         const user = await registerUser(email, password, name);
 
         return NextResponse.json({
