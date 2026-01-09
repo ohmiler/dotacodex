@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -62,34 +61,20 @@ interface Props {
     hero: Hero;
     allHeroes: Hero[];
     allItems?: Item[];
+    counters?: MatchupHero[];
+    goodAgainst?: MatchupHero[];
+    itemBuilds?: ItemBuilds | null;
 }
 
-export default function HeroDetail({ hero, allHeroes, allItems = [] }: Props) {
+export default function HeroDetail({
+    hero,
+    allHeroes,
+    allItems = [],
+    counters = [],
+    goodAgainst = [],
+    itemBuilds = null
+}: Props) {
     const t = useTranslations();
-    const [counters, setCounters] = useState<MatchupHero[]>([]);
-    const [goodAgainst, setGoodAgainst] = useState<MatchupHero[]>([]);
-    const [itemBuilds, setItemBuilds] = useState<ItemBuilds | null>(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        fetchHeroData();
-    }, [hero.id]);
-
-    const fetchHeroData = async () => {
-        try {
-            const res = await fetch(`/api/heroes/${hero.id}`);
-            if (res.ok) {
-                const data = await res.json();
-                setCounters(data.counters || []);
-                setGoodAgainst(data.goodAgainst || []);
-                setItemBuilds(data.itemBuilds || null);
-            }
-        } catch (error) {
-            console.error('Error fetching hero data:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const getHeroById = (id: number) => allHeroes.find(h => h.id === id);
     const getItemById = (id: number) => allItems.find(i => i.id === id);
@@ -286,11 +271,7 @@ export default function HeroDetail({ hero, allHeroes, allItems = [] }: Props) {
                         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                             ⚔️ {t('heroes.counters')}
                         </h2>
-                        {loading ? (
-                            <div className="flex justify-center py-8">
-                                <div className="animate-spin w-6 h-6 border-2 border-[var(--color-primary)] border-t-transparent rounded-full" />
-                            </div>
-                        ) : counters.length > 0 ? (
+                        {counters.length > 0 ? (
                             <div className="space-y-2">
                                 <p className="text-sm text-[var(--color-text-muted)] mb-3">Heroes that counter {hero.localizedName}:</p>
                                 {counters.map((matchup) => {
