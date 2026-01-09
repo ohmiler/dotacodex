@@ -9,7 +9,7 @@ import { eq } from 'drizzle-orm';
 import { Metadata } from 'next';
 import openDota from '@/lib/opendota';
 
-// Revalidate every 24 hours (reduced from 1 hour to save reads)
+// Revalidate every 24 hours
 export const revalidate = 86400;
 
 // Cache all heroes for 24 hours
@@ -150,20 +150,16 @@ export default async function HeroPage({ params }: Props) {
         notFound();
     }
 
-    // Use cached queries - all fetched on server
-    const hero = await getHeroById(heroId);
+    // Fetch hero data quickly (from DB - fast)
+    const [hero, allHeroes, allItems] = await Promise.all([
+        getHeroById(heroId),
+        getAllHeroes(),
+        getAllItems(),
+    ]);
 
     if (!hero) {
         notFound();
     }
-
-    // Fetch all data in parallel
-    const [allHeroes, allItems, matchups, itemBuilds] = await Promise.all([
-        getAllHeroes(),
-        getAllItems(),
-        getCachedMatchups(heroId),
-        getCachedItemBuilds(heroId),
-    ]);
 
     // Map hero to expected type
     const heroData = {
@@ -175,18 +171,48 @@ export default async function HeroPage({ params }: Props) {
         <div className="min-h-screen">
             <Navbar />
             <main className="pt-20">
+                {/* Page loads immediately with basic hero info */}
+                {/* Counters and items stream in via Suspense */}
                 <Suspense fallback={<HeroDetailSkeleton />}>
-                    <HeroDetail
-                        hero={heroData}
+                    <HeroDetailWithData
+                        heroId={heroId}
+                        heroData={heroData}
                         allHeroes={allHeroes.map((h: typeof allHeroes[number]) => ({ ...h, roles: h.roles || [] }))}
                         allItems={allItems}
-                        counters={matchups.counters}
-                        goodAgainst={matchups.goodAgainst}
-                        itemBuilds={itemBuilds}
                     />
                 </Suspense>
             </main>
         </div>
+    );
+}
+
+// Async component that fetches slow data (OpenDota)
+async function HeroDetailWithData({
+    heroId,
+    heroData,
+    allHeroes,
+    allItems,
+}: {
+    heroId: number;
+    heroData: Parameters<typeof HeroDetail>[0]['hero'];
+    allHeroes: Parameters<typeof HeroDetail>[0]['allHeroes'];
+    allItems: NonNullable<Parameters<typeof HeroDetail>[0]['allItems']>;
+}) {
+    // Fetch OpenDota data (may be slow on cache miss)
+    const [matchups, itemBuilds] = await Promise.all([
+        getCachedMatchups(heroId),
+        getCachedItemBuilds(heroId),
+    ]);
+
+    return (
+        <HeroDetail
+            hero={heroData}
+            allHeroes={allHeroes}
+            allItems={allItems}
+            counters={matchups.counters}
+            goodAgainst={matchups.goodAgainst}
+            itemBuilds={itemBuilds}
+        />
     );
 }
 
