@@ -313,19 +313,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         openGraph: {
             title: `${hero.localizedName} | DotaCodex`,
             description,
-            images: heroImage ? [{
-                url: heroImage,
-                width: 256,
-                height: 144,
-                alt: `${hero.localizedName} - Dota 2 Hero`
-            }] : undefined,
             type: 'article',
         },
         twitter: {
             card: 'summary_large_image',
             title: `${hero.localizedName} | DotaCodex`,
             description,
-            images: heroImage ? [heroImage] : undefined,
         },
     };
 }

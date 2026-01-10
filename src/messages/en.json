@@ -108,5 +108,19 @@
         "hasAccount": "Already have an account?",
         "signUp": "Sign up",
         "signIn": "Sign in"
+    },
+    "Privacy": {
+        "title": "Privacy Policy",
+        "intro_title": "1. Introduction",
+        "intro_content": "Welcome to DotaCodex. We value your privacy and are committed to protecting your personal data. This policy explains how we collect and use information when you visit our website.",
+        "data_title": "2. Data Collection",
+        "data_content": "We do not collect personal information unless you explicitly provide it (e.g., through registration). We use standard analytics tools to improve user experience, which may collect non-identifiable data such as browser type and pages visited.",
+        "cookies_title": "3. Cookies",
+        "cookies_content": "We use cookies to remember your preferences (such as language settings) and to analyze site traffic. You can disable cookies in your browser settings if you wish.",
+        "thirdparty_title": "4. Third-Party Services",
+        "thirdparty_content": "We may use third-party services like Google AdSense to serve advertisements. These services may use cookies to serve ads based on your visits to this and other websites.",
+        "contact_title": "5. Contact Us",
+        "contact_content": "If you have any questions about this Privacy Policy, please contact us at support@dotacodex.com.",
+        "last_updated": "Last updated: January 10, 2026"
     }
 }
