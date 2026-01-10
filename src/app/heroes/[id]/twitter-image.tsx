@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 
 // Route segment config - must be defined directly, not re-exported
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 export const alt = 'Hero Guide - DotaCodex';
 export const size = {
     width: 1200,
