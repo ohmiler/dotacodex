@@ -117,8 +117,10 @@ const getCachedHeroAbilities = async (heroName: string) => {
         async () => {
             try {
                 // Use dotaconstants package data (more accurate and up-to-date)
-                const heroAbilitiesMapping = dotaHeroAbilities as Record<string, { abilities: string[]; talents: { name: string; level: number }[] }>;
-                const allAbilities = dotaAbilities as Record<string, {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const heroAbilitiesMapping = dotaHeroAbilities as any as Record<string, { abilities: string[]; talents: { name: string; level: number }[] }>;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const allAbilities = dotaAbilities as any as Record<string, {
                     dname?: string;
                     desc?: string;
                     behavior?: string | string[];
