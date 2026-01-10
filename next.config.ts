@@ -49,6 +49,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   images: {
+    unoptimized: true, // Disable Vercel image optimization to save quota
     remotePatterns: [
       {
         protocol: 'https',
