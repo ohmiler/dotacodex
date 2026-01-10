@@ -300,7 +300,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return { title: 'Hero Not Found - DotaCodex' };
     }
 
-    const description = `เรียนรู้วิธีเล่น ${hero.localizedName} ใน Dota 2 - ${hero.primaryAttr} hero | Learn how to play ${hero.localizedName} with item builds, counters, and tips.`;
+    const description = `Learn how to play ${hero.localizedName} in Dota 2 - ${hero.primaryAttr} hero with item builds, counters, and tips.`;
+
+    // Use hero's full portrait image for OG (Steam CDN provides larger versions)
+    const heroImage = hero.img
+        ? hero.img.replace('/sb.png', '_full.png').replace('/vert.jpg', '_full.png')
+        : undefined;
 
     return {
         title: `${hero.localizedName} - Hero Guide`,
@@ -308,13 +313,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         openGraph: {
             title: `${hero.localizedName} | DotaCodex`,
             description,
-            images: hero.img ? [{ url: hero.img, width: 256, height: 144, alt: hero.localizedName }] : undefined,
+            images: heroImage ? [{
+                url: heroImage,
+                width: 256,
+                height: 144,
+                alt: `${hero.localizedName} - Dota 2 Hero`
+            }] : undefined,
+            type: 'article',
         },
         twitter: {
-            card: 'summary',
+            card: 'summary_large_image',
             title: `${hero.localizedName} | DotaCodex`,
             description,
-            images: hero.img ? [hero.img] : undefined,
+            images: heroImage ? [heroImage] : undefined,
         },
     };
 }
