@@ -43,8 +43,8 @@ export const defaultSEO: Metadata = {
     },
     openGraph: {
         type: 'website',
-        locale: 'th_TH',
-        alternateLocale: 'en_US',
+        locale: 'en_US',
+        alternateLocale: 'th_TH',
         url: SITE_URL,
         siteName: 'DotaCodex',
         title: 'DotaCodex - เรียนรู้ Dota 2 | Learn Dota 2',

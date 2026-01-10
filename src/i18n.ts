@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 
 export const locales = ['en', 'th'] as const;
 export type Locale = (typeof locales)[number];
-export const defaultLocale: Locale = 'th';
+export const defaultLocale: Locale = 'en';
 
 // Import messages statically
 import enMessages from '@/messages/en.json';

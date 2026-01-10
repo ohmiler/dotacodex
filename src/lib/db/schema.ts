@@ -8,7 +8,7 @@ export const users = sqliteTable('users', {
     name: text('name'),
     avatar: text('avatar'),
     steamId: text('steam_id').unique(),
-    locale: text('locale').default('th'),
+    locale: text('locale').default('en'),
     createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
