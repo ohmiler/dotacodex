@@ -8,6 +8,7 @@ import { heroes, items } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { Metadata } from 'next';
 import openDota from '@/lib/opendota';
+import { abilities as dotaAbilities, hero_abilities as dotaHeroAbilities } from 'dotaconstants';
 
 // Revalidate every 24 hours
 export const revalidate = 86400;
@@ -115,18 +116,26 @@ const getCachedHeroAbilities = async (heroName: string) => {
     const cached = unstable_cache(
         async () => {
             try {
-                // Fetch both endpoints in parallel
-                const [heroAbilitiesMapping, allAbilities] = await Promise.all([
-                    openDota.getHeroAbilitiesMapping(),
-                    openDota.getAbilities(),
-                ]);
+                // Use dotaconstants package data (more accurate and up-to-date)
+                const heroAbilitiesMapping = dotaHeroAbilities as Record<string, { abilities: string[]; talents: { name: string; level: number }[] }>;
+                const allAbilities = dotaAbilities as Record<string, {
+                    dname?: string;
+                    desc?: string;
+                    behavior?: string | string[];
+                    dmg_type?: string;
+                    mc?: string | string[];
+                    cd?: string | string[];
+                    img?: string;
+                    is_innate?: boolean;
+                    attrib?: Array<{ key: string; header: string; value: string | string[] }>;
+                }>;
 
                 // Get abilities for this hero (convert name to npc format)
                 const npcName = `npc_dota_hero_${heroName}`;
                 const heroAbilityList = heroAbilitiesMapping[npcName];
 
-                if (!heroAbilityList?.abilities) {
-                    return [];
+                if (!heroAbilityList) {
+                    return { abilities: [], talents: [] };
                 }
 
                 // Get detailed info for each ability
@@ -143,7 +152,7 @@ const getCachedHeroAbilities = async (heroName: string) => {
                     attrib: Array<{ key: string; header: string; value: string | string[] }> | undefined;
                 };
 
-                const abilities: AbilityInfo[] = heroAbilityList.abilities
+                const abilities: AbilityInfo[] = (heroAbilityList.abilities || [])
                     .map(abilityName => {
                         const detail = allAbilities[abilityName];
                         if (!detail) return null;
@@ -172,10 +181,93 @@ const getCachedHeroAbilities = async (heroName: string) => {
                     })
                     .filter((ability): ability is AbilityInfo => ability !== null);
 
-                return abilities;
+                // Helper to replace {s:key} with attrib values
+                // First checks talent's own attrib, then searches all hero abilities
+                const resolveAttributePlaceholders = (
+                    text: string,
+                    talentAttrib: Array<{ key: string; value: string | string[] }> | undefined,
+                    allHeroAbilities: typeof abilities
+                ): string => {
+                    let result = text.replace(/\{s:([^}]+)\}/g, (match, key) => {
+                        // First try talent's own attrib
+                        if (talentAttrib) {
+                            const attr = talentAttrib.find(a => a.key === key);
+                            if (attr) {
+                                return Array.isArray(attr.value) ? attr.value[0] : attr.value;
+                            }
+                        }
+
+                        // If key starts with "bonus_", strip it and search abilities
+                        const searchKey = key.replace(/^bonus_/, '');
+                        // Also try lowercase version for generated keys (AbilityCastRange -> abilitycastrange)
+                        const lowerSearchKey = searchKey.toLowerCase();
+
+                        // Search through hero abilities for matching attrib
+                        for (const ability of allHeroAbilities) {
+                            if (ability.attrib) {
+                                const foundAttr = ability.attrib.find((a: { key: string }) =>
+                                    a.key === searchKey || a.key === key ||
+                                    a.key === lowerSearchKey || a.key.toLowerCase() === lowerSearchKey
+                                );
+                                if (foundAttr) {
+                                    const val = (foundAttr as { value: string | string[] }).value;
+                                    return Array.isArray(val) ? val[val.length - 1] : String(val);
+                                }
+                            }
+
+                            // Special handling for cooldown reduction talents
+                            if (lowerSearchKey === 'abilitycooldown' && ability.cd) {
+                                // Return the highest cooldown value (usually the one that gets reduced)
+                                const cdVal = ability.cd;
+                                const cdNum = Array.isArray(cdVal) ? cdVal[cdVal.length - 1] : cdVal;
+                                // For cooldown reduction talents, use a standard value (3s is common)
+                                return '3';
+                            }
+                        }
+
+                        return match; // Return original if not found
+                    });
+
+                    // Fix double percent signs
+                    result = result.replace(/%%/g, '%');
+
+                    return result;
+                };
+
+                // Get talents with display names
+                type TalentInfo = {
+                    name: string;
+                    dname: string;
+                    level: number;
+                };
+
+                const talents: TalentInfo[] = (heroAbilityList.talents || [])
+                    .map(talent => {
+                        const detail = allAbilities[talent.name];
+                        let dname = detail?.dname || talent.name.replace('special_bonus_', '').replace(/_/g, ' ');
+
+                        // Replace placeholders with actual values (searches hero abilities too)
+                        dname = resolveAttributePlaceholders(dname, detail?.attrib, abilities);
+
+                        // If dname still has placeholders, use first attrib header as fallback
+                        if (dname.includes('{s:') && detail?.attrib && detail.attrib.length > 0) {
+                            const firstAttrib = detail.attrib[0];
+                            if (firstAttrib.header) {
+                                dname = firstAttrib.header.replace(':', '').trim();
+                            }
+                        }
+
+                        return {
+                            name: talent.name,
+                            dname,
+                            level: talent.level,
+                        };
+                    });
+
+                return { abilities, talents };
             } catch (error) {
                 console.error('Error fetching hero abilities:', error);
-                return [];
+                return { abilities: [], talents: [] };
             }
         },
         [`hero-abilities-${heroName}`],
@@ -285,7 +377,7 @@ async function HeroDetailWithData({
     const heroName = heroData.name.replace('npc_dota_hero_', '');
 
     // Fetch OpenDota data in parallel (with timeout and proper cache keys)
-    const [matchups, itemBuilds, abilities] = await Promise.all([
+    const [matchups, itemBuilds, heroAbilitiesData] = await Promise.all([
         getCachedMatchups(heroId),
         getCachedItemBuilds(heroId),
         getCachedHeroAbilities(heroName),
@@ -299,7 +391,8 @@ async function HeroDetailWithData({
             counters={matchups.counters}
             goodAgainst={matchups.goodAgainst}
             itemBuilds={itemBuilds}
-            abilities={abilities}
+            abilities={heroAbilitiesData.abilities}
+            talents={heroAbilitiesData.talents}
         />
     );
 }

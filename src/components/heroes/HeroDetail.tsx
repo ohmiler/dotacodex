@@ -74,6 +74,12 @@ interface HeroAbility {
     }>;
 }
 
+interface HeroTalent {
+    name: string;
+    dname: string;
+    level: number; // 1=Lvl10, 2=Lvl15, 3=Lvl20, 4=Lvl25
+}
+
 interface Props {
     hero: Hero;
     allHeroes: Hero[];
@@ -82,6 +88,7 @@ interface Props {
     goodAgainst?: MatchupHero[];
     itemBuilds?: ItemBuilds | null;
     abilities?: HeroAbility[];
+    talents?: HeroTalent[];
 }
 
 export default function HeroDetail({
@@ -91,7 +98,8 @@ export default function HeroDetail({
     counters = [],
     goodAgainst = [],
     itemBuilds = null,
-    abilities = []
+    abilities = [],
+    talents = []
 }: Props) {
     const t = useTranslations();
 
@@ -323,6 +331,113 @@ export default function HeroDetail({
                                 </div>
                             </div>
                         ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Talent Tree Section */}
+            {talents.length > 0 && (
+                <div className="max-w-7xl mx-auto px-4 py-8">
+                    <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                        🌳 Talent Tree
+                    </h2>
+                    <div className="card p-6">
+                        <div className="flex flex-col gap-4">
+                            {/* Level 25 */}
+                            {(() => {
+                                const level4Talents = talents.filter(t => t.level === 4);
+                                return level4Talents.length >= 2 ? (
+                                    <div className="flex items-center justify-center gap-4">
+                                        <div className="flex-1 text-right p-3 rounded-lg bg-[var(--color-surface-elevated)] border border-transparent hover:border-[var(--color-primary)] transition-colors">
+                                            <span className="text-sm text-[var(--color-text-muted)]">Lvl 25</span>
+                                            <p className="font-medium">{level4Talents[0].dname}</p>
+                                        </div>
+                                        <div className="w-10 h-10 rounded-full bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center font-bold text-amber-400">
+                                            25
+                                        </div>
+                                        <div className="flex-1 p-3 rounded-lg bg-[var(--color-surface-elevated)] border border-transparent hover:border-[var(--color-primary)] transition-colors">
+                                            <span className="text-sm text-[var(--color-text-muted)]">Lvl 25</span>
+                                            <p className="font-medium">{level4Talents[1].dname}</p>
+                                        </div>
+                                    </div>
+                                ) : null;
+                            })()}
+
+                            {/* Connecting Line */}
+                            <div className="flex justify-center">
+                                <div className="w-0.5 h-4 bg-[var(--color-border)]"></div>
+                            </div>
+
+                            {/* Level 20 */}
+                            {(() => {
+                                const level3Talents = talents.filter(t => t.level === 3);
+                                return level3Talents.length >= 2 ? (
+                                    <div className="flex items-center justify-center gap-4">
+                                        <div className="flex-1 text-right p-3 rounded-lg bg-[var(--color-surface-elevated)] border border-transparent hover:border-[var(--color-primary)] transition-colors">
+                                            <span className="text-sm text-[var(--color-text-muted)]">Lvl 20</span>
+                                            <p className="font-medium">{level3Talents[0].dname}</p>
+                                        </div>
+                                        <div className="w-10 h-10 rounded-full bg-purple-500/20 border-2 border-purple-500 flex items-center justify-center font-bold text-purple-400">
+                                            20
+                                        </div>
+                                        <div className="flex-1 p-3 rounded-lg bg-[var(--color-surface-elevated)] border border-transparent hover:border-[var(--color-primary)] transition-colors">
+                                            <span className="text-sm text-[var(--color-text-muted)]">Lvl 20</span>
+                                            <p className="font-medium">{level3Talents[1].dname}</p>
+                                        </div>
+                                    </div>
+                                ) : null;
+                            })()}
+
+                            {/* Connecting Line */}
+                            <div className="flex justify-center">
+                                <div className="w-0.5 h-4 bg-[var(--color-border)]"></div>
+                            </div>
+
+                            {/* Level 15 */}
+                            {(() => {
+                                const level2Talents = talents.filter(t => t.level === 2);
+                                return level2Talents.length >= 2 ? (
+                                    <div className="flex items-center justify-center gap-4">
+                                        <div className="flex-1 text-right p-3 rounded-lg bg-[var(--color-surface-elevated)] border border-transparent hover:border-[var(--color-primary)] transition-colors">
+                                            <span className="text-sm text-[var(--color-text-muted)]">Lvl 15</span>
+                                            <p className="font-medium">{level2Talents[0].dname}</p>
+                                        </div>
+                                        <div className="w-10 h-10 rounded-full bg-blue-500/20 border-2 border-blue-500 flex items-center justify-center font-bold text-blue-400">
+                                            15
+                                        </div>
+                                        <div className="flex-1 p-3 rounded-lg bg-[var(--color-surface-elevated)] border border-transparent hover:border-[var(--color-primary)] transition-colors">
+                                            <span className="text-sm text-[var(--color-text-muted)]">Lvl 15</span>
+                                            <p className="font-medium">{level2Talents[1].dname}</p>
+                                        </div>
+                                    </div>
+                                ) : null;
+                            })()}
+
+                            {/* Connecting Line */}
+                            <div className="flex justify-center">
+                                <div className="w-0.5 h-4 bg-[var(--color-border)]"></div>
+                            </div>
+
+                            {/* Level 10 */}
+                            {(() => {
+                                const level1Talents = talents.filter(t => t.level === 1);
+                                return level1Talents.length >= 2 ? (
+                                    <div className="flex items-center justify-center gap-4">
+                                        <div className="flex-1 text-right p-3 rounded-lg bg-[var(--color-surface-elevated)] border border-transparent hover:border-[var(--color-primary)] transition-colors">
+                                            <span className="text-sm text-[var(--color-text-muted)]">Lvl 10</span>
+                                            <p className="font-medium">{level1Talents[0].dname}</p>
+                                        </div>
+                                        <div className="w-10 h-10 rounded-full bg-green-500/20 border-2 border-green-500 flex items-center justify-center font-bold text-green-400">
+                                            10
+                                        </div>
+                                        <div className="flex-1 p-3 rounded-lg bg-[var(--color-surface-elevated)] border border-transparent hover:border-[var(--color-primary)] transition-colors">
+                                            <span className="text-sm text-[var(--color-text-muted)]">Lvl 10</span>
+                                            <p className="font-medium">{level1Talents[1].dname}</p>
+                                        </div>
+                                    </div>
+                                ) : null;
+                            })()}
+                        </div>
                     </div>
                 </div>
             )}
