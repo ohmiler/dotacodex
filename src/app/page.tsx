@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import Image from 'next/image';
 import Navbar from '@/components/layout/Navbar';
 
 export default function Home() {
@@ -41,26 +42,36 @@ export default function Home() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative pt-40 pb-20 px-4 overflow-hidden">
-        {/* Background effects */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[var(--color-primary)] opacity-5 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[var(--color-secondary)] opacity-5 rounded-full blur-3xl" />
+      <section className="relative pt-32 pb-20 px-4 overflow-hidden min-h-[80vh] flex items-center justify-center">
+        {/* Background Image with Overlay */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="/images/hero-bg.png"
+            alt="Dota 2 Background"
+            fill
+            priority
+            className="object-cover object-center animate-slow-zoom"
+            quality={90}
+          />
+          {/* Multi-layer overlay for depth and readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] via-[#0d1117]/80 to-transparent z-10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0d1117]/90 via-[#0d1117]/40 to-[#0d1117]/90 z-10" />
+          <div className="absolute inset-0 bg-[#0d1117]/30 backdrop-blur-[1px] z-10" />
         </div>
 
-        <div className="max-w-7xl mx-auto relative z-10">
+        <div className="max-w-7xl mx-auto relative z-20 w-full">
           <div className="text-center">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
-              <span className="text-gradient">{t('home.welcome')}</span>
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 tracking-tight animate-fadeIn">
+              <span className="text-gradient drop-shadow-2xl">{t('home.welcome')}</span>
             </h1>
-            <p className="text-xl text-[var(--color-text-muted)] max-w-2xl mx-auto mb-8">
+            <p className="text-xl sm:text-2xl text-gray-300 max-w-2xl mx-auto mb-10 leading-relaxed animate-fadeIn [animation-delay:200ms] drop-shadow-lg font-light tracking-wide">
               {t('home.description')}
             </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Link href="/learn" className="btn btn-primary text-lg px-8 py-3">
+            <div className="flex flex-wrap justify-center gap-6 animate-fadeIn [animation-delay:400ms]">
+              <Link href="/learn" className="btn btn-primary text-xl px-10 py-4 shadow-lg shadow-green-500/20 hover:shadow-green-500/40 transition-shadow">
                 {t('home.startLearning')}
               </Link>
-              <Link href="/heroes" className="btn btn-secondary text-lg px-8 py-3">
+              <Link href="/heroes" className="btn btn-secondary text-xl px-10 py-4 backdrop-blur-md bg-white/5 border-white/10 hover:bg-white/10">
                 {t('home.browseHeroes')}
               </Link>
             </div>
