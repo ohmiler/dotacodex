@@ -246,15 +246,15 @@ export default function HeroDetail({
 
                             {/* Attack Type */}
                             <p className="text-[var(--color-text-muted)] mb-4">
-                                {hero.attackType} • Attack Range: {hero.attackRange}
+                                {hero.attackType === 'Melee' ? t('heroes.melee') : t('heroes.ranged')} • {t('heroes.attackRange')}: {hero.attackRange}
                             </p>
 
                             {/* Quick Stats */}
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                <StatBox label="Base STR" value={hero.baseStr} gain={hero.strGain} color="var(--color-strength)" />
-                                <StatBox label="Base AGI" value={hero.baseAgi} gain={hero.agiGain} color="var(--color-agility)" />
-                                <StatBox label="Base INT" value={hero.baseInt} gain={hero.intGain} color="var(--color-intelligence)" />
-                                <StatBox label="Move Speed" value={hero.moveSpeed} color="var(--color-text)" />
+                                <StatBox label={t('heroes.baseStr')} value={hero.baseStr} gain={hero.strGain} color="var(--color-strength)" />
+                                <StatBox label={t('heroes.baseAgi')} value={hero.baseAgi} gain={hero.agiGain} color="var(--color-agility)" />
+                                <StatBox label={t('heroes.baseInt')} value={hero.baseInt} gain={hero.intGain} color="var(--color-intelligence)" />
+                                <StatBox label={t('heroes.moveSpeed')} value={hero.moveSpeed} color="var(--color-text)" />
                             </div>
                         </div>
                     </div>
@@ -265,7 +265,7 @@ export default function HeroDetail({
             {abilities.length > 0 && (
                 <div className="max-w-7xl mx-auto px-4 py-8">
                     <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                        🎯 สกิล (Abilities)
+                        🎯 {t('heroes.abilities')}
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {abilities.map((ability) => (
@@ -339,7 +339,7 @@ export default function HeroDetail({
             {talents.length > 0 && (
                 <div className="max-w-7xl mx-auto px-4 py-8">
                     <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                        🌳 Talent Tree
+                        🌳 {t('heroes.talentTree')}
                     </h2>
                     <div className="card p-6">
                         <div className="flex flex-col gap-4">
@@ -510,7 +510,7 @@ export default function HeroDetail({
                                 })}
                             </div>
                         ) : (
-                            <p className="text-[var(--color-text-muted)] text-sm">No matchup data available</p>
+                            <p className="text-[var(--color-text-muted)] text-sm">{t('heroes.noMatchupData')}</p>
                         )}
                     </div>
                 </div>
@@ -520,7 +520,7 @@ export default function HeroDetail({
                     <div className="mt-6">
                         <div className="card p-6">
                             <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                                ✅ {hero.localizedName} is Good Against
+                                ✅ {hero.localizedName} {t('heroes.goodAgainst')}
                             </h2>
                             <div className="flex flex-wrap gap-3">
                                 {goodAgainst.map((matchup) => {
@@ -566,7 +566,7 @@ export default function HeroDetail({
                                 {/* Starting Items */}
                                 {itemBuilds.startGame.length > 0 && (
                                     <ItemBuildSection
-                                        title="🏁 Starting Items"
+                                        title={`🏁 ${t('heroes.startingItems')}`}
                                         items={itemBuilds.startGame}
                                         allItems={allItems}
                                         getItemById={getItemById}
@@ -576,7 +576,7 @@ export default function HeroDetail({
                                 {/* Early Game */}
                                 {itemBuilds.earlyGame.length > 0 && (
                                     <ItemBuildSection
-                                        title="🌅 Early Game"
+                                        title={`🌅 ${t('heroes.earlyGame')}`}
                                         items={itemBuilds.earlyGame}
                                         allItems={allItems}
                                         getItemById={getItemById}
@@ -586,7 +586,7 @@ export default function HeroDetail({
                                 {/* Mid Game */}
                                 {itemBuilds.midGame.length > 0 && (
                                     <ItemBuildSection
-                                        title="☀️ Mid Game"
+                                        title={`☀️ ${t('heroes.midGame')}`}
                                         items={itemBuilds.midGame}
                                         allItems={allItems}
                                         getItemById={getItemById}
@@ -596,7 +596,7 @@ export default function HeroDetail({
                                 {/* Late Game */}
                                 {itemBuilds.lateGame.length > 0 && (
                                     <ItemBuildSection
-                                        title="🌙 Late Game"
+                                        title={`🌙 ${t('heroes.lateGame')}`}
                                         items={itemBuilds.lateGame}
                                         allItems={allItems}
                                         getItemById={getItemById}

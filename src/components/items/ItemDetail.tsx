@@ -55,8 +55,19 @@ interface ItemDetailProps {
 
 export default function ItemDetail({ item, allItems, openDotaData }: ItemDetailProps) {
     const t = useTranslations('items');
+    const tCommon = useTranslations('common');
     const locale = useLocale();
     const [imageError, setImageError] = useState(false);
+
+    // Translate ability types
+    const translateAbilityType = (type: string) => {
+        switch (type.toLowerCase()) {
+            case 'active': return t('active');
+            case 'passive': return t('passive');
+            case 'toggle': return t('toggle');
+            default: return type;
+        }
+    };
 
     // Get item image URL
     const getItemImage = (img: string | null) => {
@@ -145,7 +156,7 @@ export default function ItemDetail({ item, allItems, openDotaData }: ItemDetailP
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                     </svg>
-                    ← Back to Items
+                    ← {t('backToItems')}
                 </Link>
             </div>
 
@@ -180,7 +191,7 @@ export default function ItemDetail({ item, allItems, openDotaData }: ItemDetailP
                             {item.cost && item.cost > 0 && (
                                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[var(--color-accent)]/20 text-[var(--color-accent)] font-semibold">
                                     <span>💰</span>
-                                    {item.cost.toLocaleString()} Gold
+                                    {item.cost.toLocaleString()} {tCommon('gold')}
                                 </span>
                             )}
 
@@ -201,14 +212,14 @@ export default function ItemDetail({ item, allItems, openDotaData }: ItemDetailP
                             {/* Secret Shop */}
                             {item.secretShop && (
                                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 font-medium">
-                                    🏪 Secret Shop
+                                    🏪 {t('secretShop')}
                                 </span>
                             )}
 
                             {/* Recipe */}
                             {item.recipe && (
                                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-orange-500/20 text-orange-400 font-medium">
-                                    📜 Recipe
+                                    📜 {t('recipe')}
                                 </span>
                             )}
 
@@ -240,7 +251,7 @@ export default function ItemDetail({ item, allItems, openDotaData }: ItemDetailP
             {openDotaData?.abilities && openDotaData.abilities.length > 0 && (
                 <div className="card p-6 mb-8">
                     <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                        ✨ Abilities
+                        ✨ {t('abilities')}
                     </h2>
                     <div className="space-y-4">
                         {openDotaData.abilities.map((ability, index) => {
@@ -252,7 +263,7 @@ export default function ItemDetail({ item, allItems, openDotaData }: ItemDetailP
                                 >
                                     <div className="flex items-center gap-3 mb-2">
                                         <span className={`px-2 py-1 rounded text-xs font-semibold uppercase ${typeColor.bg} ${typeColor.text}`}>
-                                            {ability.type}
+                                            {translateAbilityType(ability.type)}
                                         </span>
                                         <h3 className="font-bold text-lg">{ability.title}</h3>
                                     </div>
@@ -270,7 +281,7 @@ export default function ItemDetail({ item, allItems, openDotaData }: ItemDetailP
             {openDotaData?.attrib && openDotaData.attrib.length > 0 && (
                 <div className="card p-6 mb-8">
                     <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                        📈 Stats & Bonuses
+                        📈 {t('statsAndBonuses')}
                     </h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                         {openDotaData.attrib
@@ -298,7 +309,7 @@ export default function ItemDetail({ item, allItems, openDotaData }: ItemDetailP
                 {componentItems.length > 0 && (
                     <div className="card p-6">
                         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                            📦 Components
+                            📦 {t('components')}
                         </h2>
 
                         <div className="space-y-4">
@@ -339,7 +350,7 @@ export default function ItemDetail({ item, allItems, openDotaData }: ItemDetailP
                                 <div className="flex items-center gap-3 p-3 bg-orange-500/10 rounded-lg border border-orange-500/30">
                                     <span className="text-2xl">📜</span>
                                     <div>
-                                        <div className="text-sm font-medium text-orange-400">Recipe</div>
+                                        <div className="text-sm font-medium text-orange-400">{t('recipe')}</div>
                                         <div className="text-xs text-[var(--color-accent)]">💰 {recipeCost.toLocaleString()}</div>
                                     </div>
                                 </div>
@@ -348,7 +359,7 @@ export default function ItemDetail({ item, allItems, openDotaData }: ItemDetailP
                             {/* Total Cost */}
                             <div className="pt-4 border-t border-[var(--color-border)]">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-[var(--color-text-muted)]">Total Cost:</span>
+                                    <span className="text-[var(--color-text-muted)]">{t('totalCost')}:</span>
                                     <span className="text-xl font-bold text-[var(--color-accent)]">
                                         💰 {item.cost?.toLocaleString() || 0}
                                     </span>
@@ -362,7 +373,7 @@ export default function ItemDetail({ item, allItems, openDotaData }: ItemDetailP
                 {buildsInto.length > 0 && (
                     <div className="card p-6">
                         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                            🔨 Builds Into
+                            🔨 {t('buildsInto')}
                         </h2>
 
                         <div className="grid grid-cols-2 gap-3">
@@ -408,7 +419,7 @@ export default function ItemDetail({ item, allItems, openDotaData }: ItemDetailP
                 {(openDotaData?.notes || item.notes) && (
                     <div className="card p-6 lg:col-span-2">
                         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                            💡 Notes & Tips
+                            💡 {t('notesAndTips')}
                         </h2>
                         <div className="text-[var(--color-text-muted)] leading-relaxed whitespace-pre-wrap">
                             {openDotaData?.notes || item.notes}
@@ -419,31 +430,31 @@ export default function ItemDetail({ item, allItems, openDotaData }: ItemDetailP
 
             {/* Quick Stats */}
             <div className="mt-8 card p-6">
-                <h2 className="text-xl font-bold mb-4">📊 Quick Stats</h2>
+                <h2 className="text-xl font-bold mb-4">📊 {t('quickStats')}</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="text-center p-4 bg-[var(--color-surface-elevated)] rounded-lg">
                         <div className="text-2xl font-bold text-[var(--color-accent)]">
                             {item.cost?.toLocaleString() || 0}
                         </div>
-                        <div className="text-sm text-[var(--color-text-muted)]">Gold</div>
+                        <div className="text-sm text-[var(--color-text-muted)]">{tCommon('gold')}</div>
                     </div>
                     <div className="text-center p-4 bg-[var(--color-surface-elevated)] rounded-lg">
                         <div className="text-2xl font-bold text-[var(--color-primary)]">
                             {componentItems.length}
                         </div>
-                        <div className="text-sm text-[var(--color-text-muted)]">Components</div>
+                        <div className="text-sm text-[var(--color-text-muted)]">{t('components')}</div>
                     </div>
                     <div className="text-center p-4 bg-[var(--color-surface-elevated)] rounded-lg">
                         <div className="text-2xl font-bold text-[var(--color-secondary)]">
                             {buildsInto.length}
                         </div>
-                        <div className="text-sm text-[var(--color-text-muted)]">Upgrades</div>
+                        <div className="text-sm text-[var(--color-text-muted)]">{t('upgrades')}</div>
                     </div>
                     <div className="text-center p-4 bg-[var(--color-surface-elevated)] rounded-lg">
                         <div className="text-2xl font-bold text-purple-400">
-                            {item.secretShop ? 'Yes' : 'No'}
+                            {item.secretShop ? tCommon('yes') : tCommon('no')}
                         </div>
-                        <div className="text-sm text-[var(--color-text-muted)]">Secret Shop</div>
+                        <div className="text-sm text-[var(--color-text-muted)]">{t('secretShop')}</div>
                     </div>
                 </div>
             </div>

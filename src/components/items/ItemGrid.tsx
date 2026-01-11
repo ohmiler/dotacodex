@@ -71,6 +71,7 @@ type GroupKey = keyof typeof ITEM_GROUPS;
 
 export default function ItemGrid() {
     const t = useTranslations('items');
+    const tHeroes = useTranslations('heroes');
     const [items, setItems] = useState<Item[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -159,11 +160,11 @@ export default function ItemGrid() {
     }
 
     const groupConfig = [
-        { key: 'basic', label: 'ไอเทมเริ่มต้น', labelEn: 'Starting Items', icon: '🏁', color: 'var(--color-easy)' },
-        { key: 'early', label: 'ไอเทมต้นเกม', labelEn: 'Early Game', icon: '🌅', color: 'var(--color-primary)' },
-        { key: 'mid', label: 'ไอเทมกลางเกม', labelEn: 'Mid Game', icon: '☀️', color: 'var(--color-accent)' },
-        { key: 'core', label: 'ไอเทมหลัก', labelEn: 'Core Items', icon: '⚡', color: 'var(--color-secondary)' },
-        { key: 'luxury', label: 'ไอเทมระดับสูง', labelEn: 'Luxury Items', icon: '👑', color: 'var(--color-hard)' },
+        { key: 'basic', label: tHeroes('startingItems'), icon: '🏁', color: 'var(--color-easy)' },
+        { key: 'early', label: tHeroes('earlyGame'), icon: '🌅', color: 'var(--color-primary)' },
+        { key: 'mid', label: tHeroes('midGame'), icon: '☀️', color: 'var(--color-accent)' },
+        { key: 'core', label: t('upgrade'), icon: '⚡', color: 'var(--color-secondary)' },
+        { key: 'luxury', label: t('neutral'), icon: '👑', color: 'var(--color-hard)' },
     ];
 
     return (
@@ -190,7 +191,7 @@ export default function ItemGrid() {
                             : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
                             }`}
                     >
-                        📂 Grouped
+                        📂 {t('grouped')}
                     </button>
                     <button
                         onClick={() => setViewMode('all')}
@@ -199,14 +200,14 @@ export default function ItemGrid() {
                             : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
                             }`}
                     >
-                        📋 All
+                        📋 {t('all')}
                     </button>
                 </div>
             </div>
 
             {/* Item Count */}
             <p className="mb-6 text-[var(--color-text-muted)]">
-                พบ {filteredItems.length} ไอเทม / {filteredItems.length} items found
+                {filteredItems.length} {t('itemsFound')}
             </p>
 
             {viewMode === 'grouped' ? (
@@ -225,7 +226,7 @@ export default function ItemGrid() {
                                             {group.label}
                                         </h3>
                                         <p className="text-xs text-[var(--color-text-muted)]">
-                                            {groupItems.length} items
+                                            {groupItems.length} {t('itemsFound')}
                                         </p>
                                     </div>
                                 </div>
