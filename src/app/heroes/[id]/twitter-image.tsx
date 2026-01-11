@@ -82,7 +82,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
                         backgroundImage: heroImgUrl ? `url(${heroImgUrl})` : undefined,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
-                        filter: 'blur(20px) brightness(0.3)',
+                        filter: 'blur(10px) brightness(0.7)',
                         transform: 'scale(1.1)',
                     }}
                 />
