@@ -12,8 +12,17 @@ export async function POST(request: Request) {
         const apiKey = request.headers.get('x-api-key');
         const expectedKey = process.env.SYNC_API_KEY;
 
-        // If SYNC_API_KEY is set, require it for authentication
-        if (expectedKey && apiKey !== expectedKey) {
+        // If SYNC_API_KEY is not set, deny all requests for security
+        if (!expectedKey) {
+            console.error('SYNC_API_KEY is not set in environment variables');
+            return NextResponse.json(
+                { error: 'Server configuration error' },
+                { status: 500 }
+            );
+        }
+
+        // Validate API key
+        if (apiKey !== expectedKey) {
             return NextResponse.json(
                 { error: 'Unauthorized. Invalid or missing API key.' },
                 { status: 401 }
