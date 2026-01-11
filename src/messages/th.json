@@ -27,11 +27,21 @@
         "items": "ไอเทม",
         "learn": "เรียนรู้",
         "tierList": "Tier List",
+        "patchNotes": "แพทช์โน้ต",
         "profile": "โปรไฟล์"
     },
     "tierList": {
         "title": "Meta Tier List",
         "subtitle": "จัดอันดับฮีโร่ตาม Win Rate ของ Patch ปัจจุบัน"
+    },
+    "patchNotes": {
+        "title": "แพทช์โน้ต",
+        "subtitle": "อัปเดตล่าสุดของ Dota 2",
+        "items": "ไอเท็ม",
+        "heroes": "ฮีโร่",
+        "generalChanges": "การเปลี่ยนแปลงทั่วไป",
+        "talents": "ทาเลนต์",
+        "abilities": "สกิล"
     },
     "home": {
         "welcome": "ยินดีต้อนรับสู่ DotaCodex",

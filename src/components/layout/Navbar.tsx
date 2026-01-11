@@ -30,6 +30,7 @@ export default function Navbar() {
         { href: '/heroes', label: t('nav.heroes') },
         { href: '/items', label: t('nav.items') },
         { href: '/tier-list', label: t('nav.tierList') },
+        { href: '/patch-notes', label: t('nav.patchNotes') },
         { href: '/learn', label: t('nav.learn') },
     ];
 

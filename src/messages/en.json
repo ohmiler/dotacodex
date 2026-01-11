@@ -27,11 +27,21 @@
         "items": "Items",
         "learn": "Learn",
         "tierList": "Tier List",
+        "patchNotes": "Patch Notes",
         "profile": "Profile"
     },
     "tierList": {
         "title": "Meta Tier List",
         "subtitle": "Hero rankings based on current patch win rates"
+    },
+    "patchNotes": {
+        "title": "Patch Notes",
+        "subtitle": "Latest Dota 2 balance changes",
+        "items": "Items",
+        "heroes": "Heroes",
+        "generalChanges": "General Changes",
+        "talents": "Talents",
+        "abilities": "Abilities"
     },
     "home": {
         "welcome": "Welcome to DotaCodex",
