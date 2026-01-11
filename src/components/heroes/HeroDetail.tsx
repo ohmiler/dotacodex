@@ -654,9 +654,10 @@ function ItemBuildSection({ title, items, getItemById }: ItemBuildSectionProps) 
                     const displayName = itemData.localizedName || itemData.name;
                     const displayCost = itemData.cost ?? 0;
                     return (
-                        <div
+                        <Link
                             key={item.itemId}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--color-surface-elevated)] hover:bg-[var(--color-accent-muted)] transition-colors"
+                            href={`/items/${item.itemId}`}
+                            className="group flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--color-surface-elevated)] hover:bg-[var(--color-accent-muted)] hover:scale-105 transition-all border border-transparent hover:border-[var(--color-primary)]"
                             title={`${displayName} - ${displayCost} gold`}
                         >
                             {itemData.img ? (
@@ -669,12 +670,12 @@ function ItemBuildSection({ title, items, getItemById }: ItemBuildSectionProps) 
                                 <span className="w-8 h-8 flex items-center justify-center text-lg">📦</span>
                             )}
                             <div className="hidden sm:block">
-                                <p className="text-xs font-medium">{displayName}</p>
+                                <p className="text-xs font-medium group-hover:text-[var(--color-primary)] transition-colors">{displayName}</p>
                                 <p className="text-xs text-[var(--color-accent)]">
                                     🪙 {displayCost.toLocaleString()}
                                 </p>
                             </div>
-                        </div>
+                        </Link>
                     );
                 })}
             </div>
