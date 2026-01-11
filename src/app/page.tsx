@@ -2,6 +2,11 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import Image from 'next/image';
 import Navbar from '@/components/layout/Navbar';
+import HeroOfTheDay from '@/components/home/HeroOfTheDay';
+import QuickTipBanner from '@/components/home/QuickTipBanner';
+import PopularHeroes from '@/components/home/PopularHeroes';
+import HeroShowcase from '@/components/home/HeroShowcase';
+import TrendingItems from '@/components/home/TrendingItems';
 
 export default function Home() {
   const t = useTranslations();
@@ -79,6 +84,13 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Quick Tip Banner */}
+      <section className="py-4 px-4">
+        <div className="max-w-7xl mx-auto">
+          <QuickTipBanner />
+        </div>
+      </section>
+
       {/* Features Section */}
       <section className="py-16 px-4">
         <div className="max-w-7xl mx-auto">
@@ -104,6 +116,34 @@ export default function Home() {
               </Link>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Hero Showcase Carousel */}
+      <section className="py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          <HeroShowcase />
+        </div>
+      </section>
+
+      {/* Hero of the Day Section */}
+      <section className="py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          <HeroOfTheDay />
+        </div>
+      </section>
+
+      {/* Popular Heroes Section */}
+      <section className="py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          <PopularHeroes />
+        </div>
+      </section>
+
+      {/* Trending Items Section */}
+      <section className="py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          <TrendingItems />
         </div>
       </section>
 
