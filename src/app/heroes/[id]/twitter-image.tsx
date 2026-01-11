@@ -1,6 +1,9 @@
 import { ImageResponse } from 'next/og';
+import { db } from '@/lib/db';
+import { heroes } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 
-// Route segment config - must be defined directly, not re-exported
+// Route segment config
 export const runtime = 'nodejs';
 export const alt = 'Hero Guide - DotaCodex';
 export const size = {
@@ -9,19 +12,17 @@ export const size = {
 };
 export const contentType = 'image/png';
 
-// Hero data from dotaconstants (static import for edge runtime)
-import { heroes as dotaHeroes } from 'dotaconstants';
-
-// Generate image for each hero (same as opengraph-image)
+// Generate image for each hero
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const heroId = parseInt(id);
 
-    // Find hero from dotaconstants
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const heroData = (dotaHeroes as any)[heroId];
+    // Fetch hero from DB directly for consistency
+    const hero = await db.query.heroes.findFirst({
+        where: eq(heroes.id, heroId),
+    });
 
-    if (!heroData) {
+    if (!hero) {
         return new ImageResponse(
             (
                 <div
@@ -44,7 +45,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
     }
 
     // Get attribute color
-    const primaryAttr = heroData.primary_attr;
+    const primaryAttr = hero.primaryAttr;
     const attrColor = primaryAttr === 'str' ? '#ef4444'
         : primaryAttr === 'agi' ? '#22c55e'
             : primaryAttr === 'int' ? '#3b82f6'
@@ -55,9 +56,10 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             : primaryAttr === 'int' ? 'Intelligence'
                 : 'Universal';
 
-    const heroName = heroData.localized_name;
-    const heroImg = `https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/${heroData.name.replace('npc_dota_hero_', '')}.png`;
-    const roles: string[] = heroData.roles || [];
+    // Standard img: /apps/dota2/images/dota_react/heroes/antimage.png
+    const heroImgUrl = hero.img
+        ? `https://cdn.cloudflare.steamstatic.com${hero.img}`
+        : '';
 
     return new ImageResponse(
         (
@@ -66,108 +68,140 @@ export default async function Image({ params }: { params: Promise<{ id: string }
                     height: '100%',
                     width: '100%',
                     display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    flexDirection: 'row',
                     backgroundColor: '#0a0a0f',
-                    backgroundImage: 'linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%)',
-                    padding: 60,
+                    position: 'relative',
+                    overflow: 'hidden',
                 }}
             >
-                {/* Hero Icon */}
-                <img
-                    src={heroImg}
-                    width={180}
-                    height={100}
+                {/* Background Image (Blurred/Darkened) */}
+                <div
                     style={{
-                        borderRadius: 12,
-                        border: `4px solid ${attrColor}`,
-                        marginBottom: 30,
+                        position: 'absolute',
+                        inset: 0,
+                        backgroundImage: heroImgUrl ? `url(${heroImgUrl})` : undefined,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        filter: 'blur(20px) brightness(0.3)',
+                        transform: 'scale(1.1)',
                     }}
                 />
 
-                {/* Hero Name */}
-                <div
-                    style={{
-                        fontSize: 72,
-                        fontWeight: 'bold',
-                        color: 'white',
-                        marginBottom: 16,
-                        textAlign: 'center',
-                    }}
-                >
-                    {heroName}
-                </div>
+                {/* Content Container */}
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    width: '100%',
+                    height: '100%',
+                    zIndex: 10,
+                    padding: '60px',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                }}>
 
-                {/* Attribute Badge */}
-                <div
-                    style={{
+                    {/* Left Side: Info */}
+                    <div style={{
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: 12,
-                        marginBottom: 24,
-                    }}
-                >
-                    <div
-                        style={{
-                            backgroundColor: attrColor,
-                            color: 'white',
-                            padding: '8px 24px',
-                            borderRadius: 20,
-                            fontSize: 28,
-                            fontWeight: 600,
-                        }}
-                    >
-                        {attrName}
-                    </div>
-                </div>
-
-                {/* Roles */}
-                <div
-                    style={{
-                        display: 'flex',
-                        gap: 12,
-                        marginBottom: 40,
-                    }}
-                >
-                    {roles.slice(0, 3).map((role: string) => (
-                        <div
-                            key={role}
-                            style={{
-                                backgroundColor: 'rgba(255,255,255,0.1)',
-                                color: '#a0a0a0',
-                                padding: '6px 16px',
-                                borderRadius: 12,
-                                fontSize: 22,
-                            }}
-                        >
-                            {role}
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        maxWidth: '600px',
+                    }}>
+                        {/* Attribute Badge */}
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            marginBottom: '24px',
+                        }}>
+                            <div style={{
+                                backgroundColor: attrColor,
+                                color: 'white',
+                                padding: '8px 24px',
+                                borderRadius: '100px',
+                                fontSize: 24,
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                letterSpacing: '1px',
+                                boxShadow: `0 4px 20px ${attrColor}40`,
+                            }}>
+                                {attrName}
+                            </div>
                         </div>
-                    ))}
-                </div>
 
-                {/* Branding */}
-                <div
-                    style={{
+                        {/* Name */}
+                        <div style={{
+                            fontSize: 84,
+                            fontWeight: 900,
+                            color: 'white',
+                            lineHeight: 1,
+                            marginBottom: '32px',
+                            textShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                        }}>
+                            {hero.localizedName}
+                        </div>
+
+                        {/* Roles */}
+                        <div style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '12px',
+                        }}>
+                            {(hero.roles || []).slice(0, 3).map((role) => (
+                                <div key={role} style={{
+                                    backgroundColor: 'rgba(255,255,255,0.1)',
+                                    border: '1px solid rgba(255,255,255,0.2)',
+                                    color: '#e0e0e0',
+                                    padding: '8px 20px',
+                                    borderRadius: '12px',
+                                    fontSize: 20,
+                                }}>
+                                    {role}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Right Side: Hero Image */}
+                    <div style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 12,
-                        position: 'absolute',
-                        bottom: 40,
-                    }}
-                >
-                    <div
-                        style={{
-                            fontSize: 32,
-                            color: '#22c55e',
-                            fontWeight: 'bold',
-                        }}
-                    >
-                        DotaCodex
+                        justifyContent: 'center',
+                        width: '450px',
+                        height: '450px',
+                        position: 'relative',
+                    }}>
+                        <img
+                            src={heroImgUrl}
+                            width={450}
+                            height={253}
+                            style={{
+                                width: '100%', // automatic width
+                                height: 'auto',
+                                borderRadius: '24px',
+                                boxShadow: `0 20px 50px rgba(0,0,0,0.5), 0 0 0 4px ${attrColor}`,
+                            }}
+                        />
                     </div>
+                </div>
+
+                {/* Footer Logo */}
+                <div style={{
+                    position: 'absolute',
+                    bottom: '40px',
+                    left: '60px',
+                    color: 'rgba(255,255,255,0.5)',
+                    fontSize: 24,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                }}>
+                    <div style={{ fontWeight: 'bold', color: '#fff' }}>DotaCodex</div>
+                    <div>Hero Guide</div>
                 </div>
             </div>
         ),
-        { ...size }
+        {
+            ...size,
+        }
     );
 }
