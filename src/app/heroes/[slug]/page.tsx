@@ -133,9 +133,9 @@ const getCachedHeroAbilities = async (heroName: string) => {
                     attrib?: Array<{ key: string; header: string; value: string | string[] }>;
                 }>;
 
-                // Get abilities for this hero (convert name to npc format)
-                const npcName = `npc_dota_hero_${heroName}`;
-                const heroAbilityList = heroAbilitiesMapping[npcName];
+                // Get abilities for this hero
+                // hero.name from DB is already in format 'npc_dota_hero_antimage'
+                const heroAbilityList = heroAbilitiesMapping[heroName];
 
                 if (!heroAbilityList) {
                     return { abilities: [], talents: [] };
@@ -379,6 +379,7 @@ export default async function HeroPage({ params }: Props) {
                 <HeroDetail
                     hero={heroData}
                     allHeroes={allHeroes as any} // TODO: Fix type mismatch between schema and component
+                    allItems={allItems as any}
                     counters={matchups.counters}
                     goodAgainst={matchups.goodAgainst}
                     itemBuilds={itemBuilds}
