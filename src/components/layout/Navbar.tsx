@@ -29,6 +29,7 @@ export default function Navbar() {
         { href: '/', label: t('nav.home') },
         { href: '/heroes', label: t('nav.heroes') },
         { href: '/items', label: t('nav.items') },
+        { href: '/tier-list', label: t('nav.tierList') },
         { href: '/learn', label: t('nav.learn') },
     ];
 

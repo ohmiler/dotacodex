@@ -26,7 +26,12 @@
         "heroes": "Heroes",
         "items": "Items",
         "learn": "Learn",
+        "tierList": "Tier List",
         "profile": "Profile"
+    },
+    "tierList": {
+        "title": "Meta Tier List",
+        "subtitle": "Hero rankings based on current patch win rates"
     },
     "home": {
         "welcome": "Welcome to DotaCodex",

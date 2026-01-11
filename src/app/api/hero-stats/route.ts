@@ -30,8 +30,39 @@ interface HeroStat {
     '8_win'?: number;
 }
 
-export async function GET() {
+// Tier thresholds based on win rate
+function getTier(winRate: number): 'S' | 'A' | 'B' | 'C' | 'D' {
+    if (winRate >= 54) return 'S';
+    if (winRate >= 52) return 'A';
+    if (winRate >= 50) return 'B';
+    if (winRate >= 48) return 'C';
+    return 'D';
+}
+
+// Calculate stats for specific rank range
+function calculateRankStats(hero: HeroStat, rankStart: number, rankEnd: number) {
+    let totalPicks = 0;
+    let totalWins = 0;
+
+    for (let i = rankStart; i <= rankEnd; i++) {
+        const pickKey = `${i}_pick` as keyof HeroStat;
+        const winKey = `${i}_win` as keyof HeroStat;
+        totalPicks += (hero[pickKey] as number) || 0;
+        totalWins += (hero[winKey] as number) || 0;
+    }
+
+    return {
+        picks: totalPicks,
+        wins: totalWins,
+        winRate: totalPicks > 0 ? (totalWins / totalPicks) * 100 : 0,
+    };
+}
+
+export async function GET(request: Request) {
     try {
+        const { searchParams } = new URL(request.url);
+        const rankFilter = searchParams.get('rank') || 'all';
+
         const res = await fetch(`${OPENDOTA_BASE_URL}/heroStats`, {
             next: { revalidate: 3600 }, // Cache for 1 hour
         });
@@ -42,48 +73,60 @@ export async function GET() {
 
         const heroStats: HeroStat[] = await res.json();
 
-        // Calculate total picks and wins across all ranks
-        const processedStats = heroStats.map(hero => {
-            let totalPicks = 0;
-            let totalWins = 0;
+        // Define rank ranges
+        const rankRanges: Record<string, [number, number]> = {
+            'all': [1, 8],
+            'herald-guardian': [1, 2],
+            'crusader-archon': [3, 4],
+            'legend-ancient': [5, 6],
+            'divine-immortal': [7, 8],
+        };
 
-            // Sum up picks/wins from all ranks (1-8)
-            for (let i = 1; i <= 8; i++) {
-                const pickKey = `${i}_pick` as keyof HeroStat;
-                const winKey = `${i}_win` as keyof HeroStat;
-                totalPicks += (hero[pickKey] as number) || 0;
-                totalWins += (hero[winKey] as number) || 0;
-            }
+        const [rankStart, rankEnd] = rankRanges[rankFilter] || rankRanges['all'];
 
-            const winRate = totalPicks > 0 ? (totalWins / totalPicks) * 100 : 0;
-            const pickRate = totalPicks;
+        // Process all heroes with stats
+        const allHeroes = heroStats.map(hero => {
+            const stats = calculateRankStats(hero, rankStart, rankEnd);
+            const winRate = Math.round(stats.winRate * 100) / 100;
 
             return {
                 id: hero.id,
                 localizedName: hero.localized_name,
                 primaryAttr: hero.primary_attr,
+                attackType: hero.attack_type,
                 img: `https://cdn.cloudflare.steamstatic.com${hero.img}`,
                 icon: `https://cdn.cloudflare.steamstatic.com${hero.icon}`,
                 roles: hero.roles || [],
-                winRate: Math.round(winRate * 100) / 100,
-                pickRate: pickRate,
+                winRate,
+                pickRate: stats.picks,
+                tier: getTier(winRate),
             };
-        });
+        }).filter(h => h.pickRate > 1000); // Filter out heroes with too few picks
 
-        // Sort by win rate (descending) and take top 10
-        const topByWinRate = [...processedStats]
-            .filter(h => h.pickRate > 10000) // Minimum picks to avoid outliers
-            .sort((a, b) => b.winRate - a.winRate)
-            .slice(0, 10);
+        // Sort by win rate descending
+        allHeroes.sort((a, b) => b.winRate - a.winRate);
 
-        // Sort by pick rate (descending) and take top 10
-        const topByPickRate = [...processedStats]
+        // Group by tier
+        const tierGroups = {
+            S: allHeroes.filter(h => h.tier === 'S'),
+            A: allHeroes.filter(h => h.tier === 'A'),
+            B: allHeroes.filter(h => h.tier === 'B'),
+            C: allHeroes.filter(h => h.tier === 'C'),
+            D: allHeroes.filter(h => h.tier === 'D'),
+        };
+
+        // Top 10 for homepage widgets
+        const topByWinRate = allHeroes.slice(0, 10);
+        const topByPickRate = [...allHeroes]
             .sort((a, b) => b.pickRate - a.pickRate)
             .slice(0, 10);
 
         return NextResponse.json({
+            allHeroes,
+            tierGroups,
             topByWinRate,
             topByPickRate,
+            rankFilter,
         }, {
             headers: {
                 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',

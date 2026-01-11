@@ -26,7 +26,12 @@
         "heroes": "ฮีโร่",
         "items": "ไอเทม",
         "learn": "เรียนรู้",
+        "tierList": "Tier List",
         "profile": "โปรไฟล์"
+    },
+    "tierList": {
+        "title": "Meta Tier List",
+        "subtitle": "จัดอันดับฮีโร่ตาม Win Rate ของ Patch ปัจจุบัน"
     },
     "home": {
         "welcome": "ยินดีต้อนรับสู่ DotaCodex",
