@@ -11,6 +11,32 @@ import { Metadata } from 'next';
 // Revalidate every 24 hours
 export const revalidate = 86400;
 
+// OpenDota item data interface
+interface OpenDotaItemAbility {
+    type: string;
+    title: string;
+    description: string;
+}
+
+interface OpenDotaItemAttrib {
+    key: string;
+    display?: string;
+    value: string | string[];
+}
+
+interface OpenDotaItemData {
+    abilities?: OpenDotaItemAbility[];
+    attrib?: OpenDotaItemAttrib[];
+    lore?: string;
+    notes?: string;
+    cd?: number | number[] | false;
+    mc?: number | number[] | false;
+    behavior?: string | string[];
+    dmg_type?: string;
+    bkbpierce?: string;
+    dispellable?: string;
+}
+
 // Cache all items for 24 hours (shared across all pages)
 const getAllItems = unstable_cache(
     async () => {
@@ -33,6 +59,24 @@ const getItemById = async (itemId: number) => {
     );
     return cached();
 };
+
+// Cache OpenDota item data for 24 hours
+const getOpenDotaItems = unstable_cache(
+    async (): Promise<Record<string, OpenDotaItemData>> => {
+        try {
+            const res = await fetch('https://api.opendota.com/api/constants/items', {
+                next: { revalidate: 86400 },
+            });
+            if (!res.ok) return {};
+            return await res.json();
+        } catch (error) {
+            console.error('Error fetching OpenDota items:', error);
+            return {};
+        }
+    },
+    ['opendota-items'],
+    { revalidate: 86400 }
+);
 
 // Generate static params for all items
 export async function generateStaticParams() {
@@ -88,21 +132,30 @@ export default async function ItemPage({ params }: Props) {
     }
 
     // Fetch item data
-    const [item, allItems] = await Promise.all([
+    const [item, allItems, openDotaItems] = await Promise.all([
         getItemById(itemId),
         getAllItems(),
+        getOpenDotaItems(),
     ]);
 
     if (!item) {
         notFound();
     }
 
+    // Get item key for OpenDota lookup (remove 'item_' prefix if present)
+    const itemKey = item.name.replace('item_', '');
+    const openDotaItemData = openDotaItems[itemKey] || null;
+
     return (
         <div className="min-h-screen">
             <Navbar />
             <main className="pt-20">
                 <Suspense fallback={<ItemDetailSkeleton />}>
-                    <ItemDetail item={item} allItems={allItems} />
+                    <ItemDetail
+                        item={item}
+                        allItems={allItems}
+                        openDotaData={openDotaItemData}
+                    />
                 </Suspense>
             </main>
         </div>
@@ -121,3 +174,4 @@ function ItemDetailSkeleton() {
         </div>
     );
 }
+

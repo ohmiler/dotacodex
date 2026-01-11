@@ -22,12 +22,38 @@ interface Item {
     img: string | null;
 }
 
+interface OpenDotaItemAbility {
+    type: string;
+    title: string;
+    description: string;
+}
+
+interface OpenDotaItemAttrib {
+    key: string;
+    display?: string;
+    value: string | string[];
+}
+
+interface OpenDotaItemData {
+    abilities?: OpenDotaItemAbility[];
+    attrib?: OpenDotaItemAttrib[];
+    lore?: string;
+    notes?: string;
+    cd?: number | number[] | false;
+    mc?: number | number[] | false;
+    behavior?: string | string[];
+    dmg_type?: string;
+    bkbpierce?: string;
+    dispellable?: string;
+}
+
 interface ItemDetailProps {
     item: Item;
     allItems: Item[];
+    openDotaData?: OpenDotaItemData | null;
 }
 
-export default function ItemDetail({ item, allItems }: ItemDetailProps) {
+export default function ItemDetail({ item, allItems, openDotaData }: ItemDetailProps) {
     const t = useTranslations('items');
     const locale = useLocale();
     const [imageError, setImageError] = useState(false);
@@ -73,6 +99,13 @@ export default function ItemDetail({ item, allItems }: ItemDetailProps) {
         return cost >= 1000 ? `${(cost / 1000).toFixed(1)}k` : cost.toString();
     };
 
+    // Format cooldown/mana cost
+    const formatCdOrMc = (value: number | number[] | false | undefined) => {
+        if (value === false || value === undefined) return null;
+        if (Array.isArray(value)) return value.join('/');
+        return value.toString();
+    };
+
     // Get category color
     const getCategoryColor = (category: string | null) => {
         switch (category) {
@@ -85,6 +118,21 @@ export default function ItemDetail({ item, allItems }: ItemDetailProps) {
             default: return 'var(--color-text-muted)';
         }
     };
+
+    // Get ability type color
+    const getAbilityTypeColor = (type: string) => {
+        switch (type.toLowerCase()) {
+            case 'active': return { bg: 'bg-blue-500/20', text: 'text-blue-400' };
+            case 'passive': return { bg: 'bg-green-500/20', text: 'text-green-400' };
+            case 'toggle': return { bg: 'bg-purple-500/20', text: 'text-purple-400' };
+            case 'use': return { bg: 'bg-orange-500/20', text: 'text-orange-400' };
+            case 'upgrade': return { bg: 'bg-yellow-500/20', text: 'text-yellow-400' };
+            default: return { bg: 'bg-gray-500/20', text: 'text-gray-400' };
+        }
+    };
+
+    const cooldown = formatCdOrMc(openDotaData?.cd);
+    const manaCost = formatCdOrMc(openDotaData?.mc);
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
@@ -136,6 +184,20 @@ export default function ItemDetail({ item, allItems }: ItemDetailProps) {
                                 </span>
                             )}
 
+                            {/* Cooldown */}
+                            {cooldown && (
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-sky-500/20 text-sky-400 font-medium">
+                                    ⏱️ {cooldown}s
+                                </span>
+                            )}
+
+                            {/* Mana Cost */}
+                            {manaCost && (
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 font-medium">
+                                    💧 {manaCost}
+                                </span>
+                            )}
+
                             {/* Secret Shop */}
                             {item.secretShop && (
                                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 font-medium">
@@ -164,15 +226,72 @@ export default function ItemDetail({ item, allItems }: ItemDetailProps) {
                             )}
                         </div>
 
-                        {/* Description */}
-                        {displayDescription && (
-                            <div className="text-[var(--color-text-muted)] leading-relaxed whitespace-pre-wrap max-w-3xl">
-                                {displayDescription}
+                        {/* Lore */}
+                        {openDotaData?.lore && (
+                            <div className="text-[var(--color-text-muted)] italic text-sm leading-relaxed max-w-3xl mb-4 border-l-2 border-[var(--color-accent)]/50 pl-4">
+                                "{openDotaData.lore}"
                             </div>
                         )}
                     </div>
                 </div>
             </div>
+
+            {/* Abilities Section from OpenDota */}
+            {openDotaData?.abilities && openDotaData.abilities.length > 0 && (
+                <div className="card p-6 mb-8">
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                        ✨ Abilities
+                    </h2>
+                    <div className="space-y-4">
+                        {openDotaData.abilities.map((ability, index) => {
+                            const typeColor = getAbilityTypeColor(ability.type);
+                            return (
+                                <div
+                                    key={index}
+                                    className="p-4 bg-[var(--color-surface-elevated)] rounded-lg border border-[var(--color-border)]"
+                                >
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <span className={`px-2 py-1 rounded text-xs font-semibold uppercase ${typeColor.bg} ${typeColor.text}`}>
+                                            {ability.type}
+                                        </span>
+                                        <h3 className="font-bold text-lg">{ability.title}</h3>
+                                    </div>
+                                    <p className="text-[var(--color-text-muted)] leading-relaxed whitespace-pre-wrap">
+                                        {ability.description}
+                                    </p>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {/* Stats Section from OpenDota */}
+            {openDotaData?.attrib && openDotaData.attrib.length > 0 && (
+                <div className="card p-6 mb-8">
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                        📈 Stats & Bonuses
+                    </h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        {openDotaData.attrib
+                            .filter(attr => attr.display)
+                            .map((attr, index) => {
+                                const value = Array.isArray(attr.value) ? attr.value.join('/') : attr.value;
+                                const displayText = attr.display?.replace('{value}', value) || `${attr.key}: ${value}`;
+
+                                return (
+                                    <div
+                                        key={index}
+                                        className="flex items-center gap-2 p-3 bg-[var(--color-surface-elevated)] rounded-lg"
+                                    >
+                                        <span className="text-[var(--color-primary)]">•</span>
+                                        <span className="text-sm">{displayText}</span>
+                                    </div>
+                                );
+                            })}
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Components Section */}
@@ -286,13 +405,13 @@ export default function ItemDetail({ item, allItems }: ItemDetailProps) {
                 )}
 
                 {/* Notes Section */}
-                {item.notes && (
+                {(openDotaData?.notes || item.notes) && (
                     <div className="card p-6 lg:col-span-2">
                         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                             💡 Notes & Tips
                         </h2>
                         <div className="text-[var(--color-text-muted)] leading-relaxed whitespace-pre-wrap">
-                            {item.notes}
+                            {openDotaData?.notes || item.notes}
                         </div>
                     </div>
                 )}
