@@ -74,7 +74,7 @@ class OpenDotaClient {
     private baseUrl: string;
     private apiKey?: string;
     private callCount = 0;
-    private timeout = 5000; // 5 second timeout
+    private timeout = 15000; // 15 second timeout (OpenDota can be slow)
 
     constructor(apiKey?: string) {
         this.baseUrl = OPENDOTA_BASE_URL;
@@ -120,9 +120,12 @@ class OpenDotaClient {
             clearTimeout(timeoutId);
             if (error instanceof Error && error.name === 'AbortError') {
                 console.error(`[OpenDota API] TIMEOUT: ${endpoint} took longer than ${this.timeout}ms`);
-                throw new Error(`OpenDota API timeout: ${endpoint}`);
+                // Return null/empty instead of throwing - let caller handle gracefully
+                return [] as T;
             }
-            throw error;
+            // For other errors, also return empty to prevent page crash
+            console.error(`[OpenDota API] Error fetching ${endpoint}:`, error);
+            return [] as T;
         }
     }
 
@@ -140,7 +143,11 @@ class OpenDotaClient {
         games_played: number;
         wins: number;
     }>> {
-        return this.fetch(`/heroes/${heroId}/matchups`);
+        try {
+            return await this.fetch(`/heroes/${heroId}/matchups`);
+        } catch {
+            return [];
+        }
     }
 
     async getItems(): Promise<Record<string, OpenDotaItem>> {
@@ -161,7 +168,16 @@ class OpenDotaClient {
         mid_game_items: Record<string, number>;
         late_game_items: Record<string, number>;
     }> {
-        return this.fetch(`/heroes/${heroId}/itemPopularity`);
+        try {
+            return await this.fetch(`/heroes/${heroId}/itemPopularity`);
+        } catch {
+            return {
+                start_game_items: {},
+                early_game_items: {},
+                mid_game_items: {},
+                late_game_items: {},
+            };
+        }
     }
 
     // Get current session call count

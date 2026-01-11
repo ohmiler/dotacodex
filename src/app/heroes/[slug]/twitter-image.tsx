@@ -2,6 +2,7 @@ import { ImageResponse } from 'next/og';
 import { db } from '@/lib/db';
 import { heroes } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { getHeroIdFromSlug } from '@/lib/utils';
 
 // Route segment config
 export const runtime = 'nodejs';
@@ -13,9 +14,9 @@ export const size = {
 export const contentType = 'image/png';
 
 // Generate image for each hero
-export default async function Image({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
-    const heroId = parseInt(id);
+export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
+    const heroId = getHeroIdFromSlug(slug);
 
     // Fetch hero from DB directly for consistency
     const hero = await db.query.heroes.findFirst({

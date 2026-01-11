@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { db } from '@/lib/db';
+import { generateHeroSlug } from '@/lib/utils';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dotacodex.com';
@@ -28,7 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     // Hero routes
     const heroRoutes = heroes.map((hero: any) => ({
-        url: `${siteUrl}/heroes/${hero.id}`,
+        url: `${siteUrl}/heroes/${generateHeroSlug(hero.localizedName, hero.id)}`,
         lastModified: new Date(),
         changeFrequency: 'monthly' as const,
         priority: 0.6,

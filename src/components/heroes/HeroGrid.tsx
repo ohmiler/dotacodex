@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
+import { generateHeroSlug } from '@/lib/utils';
 
 interface Hero {
     id: number;
@@ -149,7 +150,7 @@ export default function HeroGrid() {
                 {filteredHeroes.map(hero => (
                     <Link
                         key={hero.id}
-                        href={`/heroes/${hero.id}`}
+                        href={`/heroes/${generateHeroSlug(hero.localizedName, hero.id)}`}
                         className="card p-3 group"
                     >
                         <div className="relative aspect-[16/9] mb-2 rounded-lg overflow-hidden bg-[var(--color-surface-elevated)]">

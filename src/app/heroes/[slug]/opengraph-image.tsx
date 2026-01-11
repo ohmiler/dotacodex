@@ -2,6 +2,7 @@ import { ImageResponse } from 'next/og';
 import { db } from '@/lib/db';
 import { heroes } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { getHeroIdFromSlug } from '@/lib/utils';
 
 // Route segment config
 export const runtime = 'nodejs';
@@ -13,9 +14,9 @@ export const size = {
 export const contentType = 'image/png';
 
 // Generate image for each hero
-export default async function Image({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
-    const heroId = parseInt(id);
+export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
+    const heroId = getHeroIdFromSlug(slug);
 
     // Fetch hero from DB directly for consistency
     const hero = await db.query.heroes.findFirst({
@@ -56,19 +57,10 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             : primaryAttr === 'int' ? 'Intelligence'
                 : 'Universal';
 
-    // Use full horizontal portrait if available, otherwise fallback
     // Standard img: /apps/dota2/images/dota_react/heroes/antimage.png
     const heroImgUrl = hero.img
         ? `https://cdn.cloudflare.steamstatic.com${hero.img}`
         : '';
-
-    // Try to construct the render image url which looks better
-    // e.g., antimage.png -> antimage.png (but from /renders/ directory)
-    // Actually, let's use the one we have but maybe scale it up or use the large horizontal one provided by Steam
-    // The 'img' in DB usually looks like: /apps/dota2/images/dota_react/heroes/antimage.png?3
-    // We want the 'full' png usually found at: .../antimage.png (high res)
-
-    // Let's use the background image approach
 
     return new ImageResponse(
         (
@@ -181,8 +173,8 @@ export default async function Image({ params }: { params: Promise<{ id: string }
                     }}>
                         <img
                             src={heroImgUrl}
-                            width={450} // Aspect ratio might be different but object-fit helps
-                            height={253} // Standard aspect ratio is 16:9 usually
+                            width={450}
+                            height={253}
                             style={{
                                 width: '100%', // automatic width
                                 height: 'auto',

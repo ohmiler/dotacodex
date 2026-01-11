@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { unstable_cache } from 'next/cache';
 import Navbar from '@/components/layout/Navbar';
 import HeroDetail from '@/components/heroes/HeroDetail';
@@ -9,6 +9,7 @@ import { eq } from 'drizzle-orm';
 import { Metadata } from 'next';
 import openDota from '@/lib/opendota';
 import { abilities as dotaAbilities, hero_abilities as dotaHeroAbilities } from 'dotaconstants';
+import { generateHeroSlug, getHeroIdFromSlug } from '@/lib/utils';
 
 // Revalidate every 24 hours
 export const revalidate = 86400;
@@ -278,21 +279,21 @@ const getCachedHeroAbilities = async (heroName: string) => {
     return cached();
 };
 
-// Generate static pages for all heroes at build time
+// Generate static params for all heroes
 export async function generateStaticParams() {
-    const allHeroes = await db.select({ id: heroes.id }).from(heroes);
-    return allHeroes.map((hero: { id: number }) => ({
-        id: String(hero.id),
+    const allHeroes = await db.select({ id: heroes.id, name: heroes.localizedName }).from(heroes);
+    return allHeroes.map((hero: { id: number; name: string }) => ({
+        slug: generateHeroSlug(hero.name, hero.id),
     }));
 }
 
 interface Props {
-    params: Promise<{ id: string }>;
+    params: Promise<{ slug: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    const { id } = await params;
-    const heroId = parseInt(id);
+    const { slug } = await params;
+    const heroId = getHeroIdFromSlug(slug);
 
     const hero = await getHeroById(heroId);
 
@@ -302,16 +303,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const description = `Learn how to play ${hero.localizedName} in Dota 2 - ${hero.primaryAttr} hero with item builds, counters, and tips.`;
 
-    // Use hero's full portrait image for OG (Steam CDN provides larger versions)
-    const heroImage = hero.img
-        ? hero.img.replace('/sb.png', '_full.png').replace('/vert.jpg', '_full.png')
-        : undefined;
-
     return {
         title: `${hero.localizedName} - Hero Guide`,
         description,
         alternates: {
-            canonical: `/heroes/${heroId}`,
+            // Use the current slug as canonical
+            canonical: `/heroes/${slug}`,
         },
         openGraph: {
             title: `${hero.localizedName} | DotaCodex`,
@@ -329,10 +326,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function HeroPage({ params }: Props) {
-    const { id } = await params;
-    const heroId = parseInt(id);
+    const { slug } = await params;
 
-    if (isNaN(heroId)) {
+    // Check for legacy numeric format
+    if (/^\d+$/.test(slug)) {
+        const legacyId = parseInt(slug);
+        const hero = await getHeroById(legacyId);
+        if (hero) {
+            // Permanent redirect to new slug format
+            permanentRedirect(`/heroes/${generateHeroSlug(hero.localizedName, hero.id)}`);
+        }
+    }
+
+    const heroId = getHeroIdFromSlug(slug);
+
+    if (!heroId) {
         notFound();
     }
 
@@ -351,72 +359,33 @@ export default async function HeroPage({ params }: Props) {
     const heroData = {
         ...hero,
         roles: hero.roles || [],
+        img: hero.img ? hero.img.replace('/sb.png', '_full.png').replace('/vert.jpg', '_full.png') : hero.img,
     };
 
-    return (
-        <div className="min-h-screen">
-            <Navbar />
-            <main className="pt-20">
-                {/* Page loads immediately with basic hero info */}
-                {/* Counters and items stream in via Suspense */}
-                <Suspense fallback={<HeroDetailSkeleton />}>
-                    <HeroDetailWithData
-                        heroId={heroId}
-                        heroData={heroData}
-                        allHeroes={allHeroes.map((h: typeof allHeroes[number]) => ({ ...h, roles: h.roles || [] }))}
-                        allItems={allItems}
-                    />
-                </Suspense>
-            </main>
-        </div>
-    );
-}
-
-// Async component that fetches slow data (OpenDota)
-async function HeroDetailWithData({
-    heroId,
-    heroData,
-    allHeroes,
-    allItems,
-}: {
-    heroId: number;
-    heroData: Parameters<typeof HeroDetail>[0]['hero'];
-    allHeroes: Parameters<typeof HeroDetail>[0]['allHeroes'];
-    allItems: NonNullable<Parameters<typeof HeroDetail>[0]['allItems']>;
-}) {
-    // Extract hero name for abilities lookup (e.g., "Anti-Mage" -> "antimage")
-    const heroName = heroData.name.replace('npc_dota_hero_', '');
-
-    // Fetch OpenDota data in parallel (with timeout and proper cache keys)
-    const [matchups, itemBuilds, heroAbilitiesData] = await Promise.all([
-        getCachedMatchups(heroId),
-        getCachedItemBuilds(heroId),
-        getCachedHeroAbilities(heroName),
+    // Parallel fetch for other data
+    const [matchups, itemBuilds, abilitiesData] = await Promise.all([
+        getCachedMatchups(hero.id),
+        getCachedItemBuilds(hero.id),
+        getCachedHeroAbilities(hero.name),
     ]);
 
-    return (
-        <HeroDetail
-            hero={heroData}
-            allHeroes={allHeroes}
-            allItems={allItems}
-            counters={matchups.counters}
-            goodAgainst={matchups.goodAgainst}
-            itemBuilds={itemBuilds}
-            abilities={heroAbilitiesData.abilities}
-            talents={heroAbilitiesData.talents}
-        />
-    );
-}
 
-function HeroDetailSkeleton() {
+
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8 animate-pulse">
-            <div className="h-8 w-48 bg-[var(--color-surface)] rounded mb-4" />
-            <div className="h-64 bg-[var(--color-surface)] rounded-xl mb-8" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="h-48 bg-[var(--color-surface)] rounded-xl" />
-                <div className="h-48 bg-[var(--color-surface)] rounded-xl" />
-            </div>
-        </div>
+        <main className="min-h-screen bg-[var(--color-background)]">
+            <Navbar />
+
+            <Suspense fallback={<div className="h-screen flex items-center justify-center text-white">Loading...</div>}>
+                <HeroDetail
+                    hero={heroData}
+                    allHeroes={allHeroes as any} // TODO: Fix type mismatch between schema and component
+                    counters={matchups.counters}
+                    goodAgainst={matchups.goodAgainst}
+                    itemBuilds={itemBuilds}
+                    abilities={abilitiesData.abilities}
+                    talents={abilitiesData.talents}
+                />
+            </Suspense>
+        </main>
     );
 }

@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import Image from 'next/image';
 import Link from 'next/link';
+import { generateHeroSlug } from '@/lib/utils';
 
 interface Favorite {
     heroId: number;
@@ -179,7 +180,7 @@ export default function ProfilePage() {
                                     fav.hero && (
                                         <Link
                                             key={fav.heroId}
-                                            href={`/heroes/${fav.heroId}`}
+                                            href={`/heroes/${generateHeroSlug(fav.hero.localizedName, fav.hero.id)}`}
                                             className="group"
                                         >
                                             <div className="card p-3 hover:border-[var(--color-primary)] transition-colors">

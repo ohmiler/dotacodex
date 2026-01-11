@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { generateHeroSlug } from '@/lib/utils';
 
 interface SearchResult {
     type: 'hero' | 'item';
@@ -81,7 +82,9 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
         } else if (e.key === 'Enter' && results[selectedIndex]) {
             e.preventDefault();
             const result = results[selectedIndex];
-            const href = result.type === 'hero' ? `/heroes/${result.id}` : `/items/${result.id}`;
+            const href = result.type === 'hero'
+                ? `/heroes/${generateHeroSlug(result.localizedName, result.id)}`
+                : `/items/${result.id}`;
             router.push(href);
             onClose();
         } else if (e.key === 'Escape') {
@@ -163,7 +166,9 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                     {results.map((result, index) => (
                         <Link
                             key={`${result.type}-${result.id}`}
-                            href={result.type === 'hero' ? `/heroes/${result.id}` : `/items/${result.id}`}
+                            href={result.type === 'hero'
+                                ? `/heroes/${generateHeroSlug(result.localizedName, result.id)}`
+                                : `/items/${result.id}`}
                             onClick={onClose}
                             className={`flex items-center gap-4 p-3 transition-colors ${index === selectedIndex
                                 ? 'bg-[var(--color-primary)]/20'

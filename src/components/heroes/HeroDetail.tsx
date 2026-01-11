@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import FavoriteButton from '@/components/favorites/FavoriteButton';
+import { generateHeroSlug } from '@/lib/utils';
 
 interface Hero {
     id: number;
@@ -488,7 +489,7 @@ export default function HeroDetail({
                                     return (
                                         <Link
                                             key={matchup.heroId}
-                                            href={`/heroes/${matchup.heroId}`}
+                                            href={`/heroes/${generateHeroSlug(counterHero.localizedName, counterHero.id)}`}
                                             className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--color-surface-elevated)] transition-colors"
                                         >
                                             <div className="relative w-10 h-6 rounded overflow-hidden">
@@ -529,7 +530,7 @@ export default function HeroDetail({
                                     return (
                                         <Link
                                             key={matchup.heroId}
-                                            href={`/heroes/${matchup.heroId}`}
+                                            href={`/heroes/${generateHeroSlug(targetHero.localizedName, targetHero.id)}`}
                                             className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--color-surface-elevated)] hover:bg-[var(--color-primary-muted)] transition-colors"
                                         >
                                             <div className="relative w-8 h-5 rounded overflow-hidden">
