@@ -445,7 +445,7 @@ export default function HeroDetail({
 
             {/* Content Sections */}
             <div className="max-w-7xl mx-auto px-4 pb-16">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Stats Card */}
                     <div className="card p-6">
                         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -474,82 +474,102 @@ export default function HeroDetail({
                             ))}
                         </ul>
                     </div>
-
-                    {/* Counters Card */}
-                    <div className="card p-6">
-                        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                            ⚔️ {t('heroes.counters')}
-                        </h2>
-                        {counters.length > 0 ? (
-                            <div className="space-y-2">
-                                <p className="text-sm text-[var(--color-text-muted)] mb-3">Heroes that counter {hero.localizedName}:</p>
-                                {counters.map((matchup) => {
-                                    const counterHero = getHeroById(matchup.heroId);
-                                    if (!counterHero) return null;
-                                    return (
-                                        <Link
-                                            key={matchup.heroId}
-                                            href={`/heroes/${generateHeroSlug(counterHero.localizedName, counterHero.id)}`}
-                                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--color-surface-elevated)] transition-colors"
-                                        >
-                                            <div className="relative w-10 h-6 rounded overflow-hidden">
-                                                {counterHero.img && (
-                                                    <Image
-                                                        src={counterHero.img}
-                                                        alt={counterHero.localizedName}
-                                                        fill
-                                                        className="object-cover"
-                                                    />
-                                                )}
-                                            </div>
-                                            <span className="flex-1 text-sm">{counterHero.localizedName}</span>
-                                            <span className="text-sm text-[var(--color-secondary)]">
-                                                {matchup.winRate.toFixed(1)}%
-                                            </span>
-                                        </Link>
-                                    );
-                                })}
-                            </div>
-                        ) : (
-                            <p className="text-[var(--color-text-muted)] text-sm">{t('heroes.noMatchupData')}</p>
-                        )}
-                    </div>
                 </div>
 
-                {/* Good Against Section */}
-                {goodAgainst.length > 0 && (
+                {/* Matchups Section - Full Width */}
+                {(counters.length > 0 || goodAgainst.length > 0) && (
                     <div className="mt-6">
                         <div className="card p-6">
-                            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                                ✅ {hero.localizedName} {t('heroes.goodAgainst')}
+                            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                                ⚔️ {t('heroes.matchups')}
                             </h2>
-                            <div className="flex flex-wrap gap-3">
-                                {goodAgainst.map((matchup) => {
-                                    const targetHero = getHeroById(matchup.heroId);
-                                    if (!targetHero) return null;
-                                    return (
-                                        <Link
-                                            key={matchup.heroId}
-                                            href={`/heroes/${generateHeroSlug(targetHero.localizedName, targetHero.id)}`}
-                                            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--color-surface-elevated)] hover:bg-[var(--color-primary-muted)] transition-colors"
-                                        >
-                                            <div className="relative w-8 h-5 rounded overflow-hidden">
-                                                {targetHero.img && (
-                                                    <Image
-                                                        src={targetHero.img}
-                                                        alt={targetHero.localizedName}
-                                                        fill
-                                                        className="object-cover"
-                                                    />
-                                                )}
-                                            </div>
-                                            <span className="text-sm">{targetHero.localizedName}</span>
-                                            <span className="text-xs text-[var(--color-primary)]">
-                                                {matchup.winRate.toFixed(1)}%
-                                            </span>
-                                        </Link>
-                                    );
-                                })}
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {/* Countered By */}
+                                <div>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <span className="text-xl">👎</span>
+                                        <span className="font-medium text-red-400">{t('heroes.counteredBy')}</span>
+                                    </div>
+                                    {counters.length > 0 ? (
+                                        <div className="space-y-3">
+                                            {counters.map((matchup) => {
+                                                const counterHero = getHeroById(matchup.heroId);
+                                                if (!counterHero) return null;
+                                                return (
+                                                    <Link
+                                                        key={matchup.heroId}
+                                                        href={`/heroes/${generateHeroSlug(counterHero.localizedName, counterHero.id)}`}
+                                                        className="flex items-center gap-4 p-4 rounded-xl bg-[var(--color-surface-elevated)] hover:bg-red-500/10 border border-[var(--color-border)] hover:border-red-500/50 transition-all group"
+                                                    >
+                                                        <div className="relative w-20 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                                                            {counterHero.img && (
+                                                                <Image
+                                                                    src={counterHero.img}
+                                                                    alt={counterHero.localizedName}
+                                                                    fill
+                                                                    className="object-cover"
+                                                                />
+                                                            )}
+                                                        </div>
+                                                        <span className="flex-1 font-medium text-lg group-hover:text-red-400 transition-colors">
+                                                            {counterHero.localizedName}
+                                                        </span>
+                                                        <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/20">
+                                                            <span className="text-lg font-bold text-red-400">{matchup.winRate.toFixed(1)}%</span>
+                                                            <span className="text-red-400">↓</span>
+                                                        </div>
+                                                    </Link>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <p className="text-[var(--color-text-muted)]">{t('heroes.noMatchupData')}</p>
+                                    )}
+                                </div>
+
+                                {/* Good Against */}
+                                <div>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <span className="text-xl">👍</span>
+                                        <span className="font-medium text-green-400">{t('heroes.goodAgainst')}</span>
+                                    </div>
+                                    {goodAgainst.length > 0 ? (
+                                        <div className="space-y-3">
+                                            {goodAgainst.map((matchup) => {
+                                                const targetHero = getHeroById(matchup.heroId);
+                                                if (!targetHero) return null;
+                                                return (
+                                                    <Link
+                                                        key={matchup.heroId}
+                                                        href={`/heroes/${generateHeroSlug(targetHero.localizedName, targetHero.id)}`}
+                                                        className="flex items-center gap-4 p-4 rounded-xl bg-[var(--color-surface-elevated)] hover:bg-green-500/10 border border-[var(--color-border)] hover:border-green-500/50 transition-all group"
+                                                    >
+                                                        <div className="relative w-20 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                                                            {targetHero.img && (
+                                                                <Image
+                                                                    src={targetHero.img}
+                                                                    alt={targetHero.localizedName}
+                                                                    fill
+                                                                    className="object-cover"
+                                                                />
+                                                            )}
+                                                        </div>
+                                                        <span className="flex-1 font-medium text-lg group-hover:text-green-400 transition-colors">
+                                                            {targetHero.localizedName}
+                                                        </span>
+                                                        <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/20">
+                                                            <span className="text-lg font-bold text-green-400">{matchup.winRate.toFixed(1)}%</span>
+                                                            <span className="text-green-400">↑</span>
+                                                        </div>
+                                                    </Link>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <p className="text-[var(--color-text-muted)]">{t('heroes.noMatchupData')}</p>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
