@@ -155,7 +155,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
                             flexWrap: 'wrap',
                             gap: '12px',
                         }}>
-                            {(hero.roles || []).slice(0, 3).map((role) => (
+                            {(hero.roles || []).slice(0, 3).map((role: string) => (
                                 <div key={role} style={{
                                     backgroundColor: 'rgba(255,255,255,0.1)',
                                     border: '1px solid rgba(255,255,255,0.2)',
