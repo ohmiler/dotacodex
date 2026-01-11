@@ -46,12 +46,12 @@ export async function GET(request: Request) {
 
         // Filter out recipes and limit
         const itemResults = itemResultsRaw
-            .filter(item => !item.recipe)
+            .filter((item: typeof itemResultsRaw[number]) => !item.recipe)
             .slice(0, 10);
 
         // Combine and format results
         const results = [
-            ...heroResults.map(hero => ({
+            ...heroResults.map((hero: typeof heroResults[number]) => ({
                 type: 'hero' as const,
                 id: hero.id,
                 name: hero.name,
@@ -60,7 +60,7 @@ export async function GET(request: Request) {
                 primaryAttr: hero.primaryAttr,
                 roles: hero.roles,
             })),
-            ...itemResults.map(item => ({
+            ...itemResults.map((item: typeof itemResults[number]) => ({
                 type: 'item' as const,
                 id: item.id,
                 name: item.name,
