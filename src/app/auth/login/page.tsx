@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
@@ -40,8 +41,22 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center px-4">
-            <div className="w-full max-w-md">
+        <div className="min-h-screen flex items-center justify-center px-4 relative">
+            {/* Background Image */}
+            <div className="absolute inset-0 z-0">
+                <Image
+                    src="/og-image.png"
+                    alt="Background"
+                    fill
+                    className="object-cover"
+                    priority
+                />
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-[#0d1117]/95 via-[#0d1117]/85 to-[#0d1117]/95" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] via-transparent to-[#0d1117]/80" />
+            </div>
+
+            <div className="w-full max-w-md relative z-10">
                 {/* Logo */}
                 <Link href="/" className="flex items-center justify-center gap-2 mb-8">
                     <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] flex items-center justify-center">
