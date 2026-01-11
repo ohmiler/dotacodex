@@ -310,15 +310,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return {
         title: `${hero.localizedName} - Hero Guide`,
         description,
+        alternates: {
+            canonical: `/heroes/${heroId}`,
+        },
         openGraph: {
             title: `${hero.localizedName} | DotaCodex`,
             description,
             type: 'article',
+            // images: is automatically handled by opengraph-image.tsx
         },
         twitter: {
             card: 'summary_large_image',
             title: `${hero.localizedName} | DotaCodex`,
             description,
+            // images: is automatically handled by twitter-image.tsx
         },
     };
 }
