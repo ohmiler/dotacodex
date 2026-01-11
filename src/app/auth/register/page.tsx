@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -16,6 +16,30 @@ export default function RegisterPage() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+
+    // Password strength calculation
+    const passwordStrength = useMemo(() => {
+        if (!password) return { level: 0, label: '', color: '' };
+
+        let score = 0;
+        const checks = {
+            length: password.length >= 8,
+            lowercase: /[a-z]/.test(password),
+            uppercase: /[A-Z]/.test(password),
+            number: /[0-9]/.test(password),
+            special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+        };
+
+        if (checks.length) score++;
+        if (checks.lowercase) score++;
+        if (checks.uppercase) score++;
+        if (checks.number) score++;
+        if (checks.special) score++;
+
+        if (score <= 2) return { level: 1, label: 'Weak', color: 'bg-red-500', checks };
+        if (score <= 3) return { level: 2, label: 'Medium', color: 'bg-yellow-500', checks };
+        return { level: 3, label: 'Strong', color: 'bg-green-500', checks };
+    }, [password]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -130,6 +154,41 @@ export default function RegisterPage() {
                                 className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-elevated)] border border-[var(--color-border)] focus:border-[var(--color-primary)] focus:outline-none transition-colors"
                                 required
                             />
+                            {/* Password Strength Indicator */}
+                            {password && (
+                                <div className="mt-2">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="flex-1 h-1 bg-[var(--color-border)] rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full transition-all ${passwordStrength.color}`}
+                                                style={{ width: `${(passwordStrength.level / 3) * 100}%` }}
+                                            />
+                                        </div>
+                                        <span className={`text-xs font-medium ${passwordStrength.level === 1 ? 'text-red-400' :
+                                                passwordStrength.level === 2 ? 'text-yellow-400' : 'text-green-400'
+                                            }`}>
+                                            {passwordStrength.label}
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
+                                        <span className={passwordStrength.checks?.length ? 'text-green-400' : 'text-[var(--color-text-muted)]'}>
+                                            ✓ 8+ characters
+                                        </span>
+                                        <span className={passwordStrength.checks?.uppercase ? 'text-green-400' : 'text-[var(--color-text-muted)]'}>
+                                            ✓ Uppercase
+                                        </span>
+                                        <span className={passwordStrength.checks?.lowercase ? 'text-green-400' : 'text-[var(--color-text-muted)]'}>
+                                            ✓ Lowercase
+                                        </span>
+                                        <span className={passwordStrength.checks?.number ? 'text-green-400' : 'text-[var(--color-text-muted)]'}>
+                                            ✓ Number
+                                        </span>
+                                        <span className={passwordStrength.checks?.special ? 'text-green-400' : 'text-[var(--color-text-muted)]'}>
+                                            ✓ Special (!@#$)
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div>
