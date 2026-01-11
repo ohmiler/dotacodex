@@ -192,12 +192,12 @@ export default function HeroDetail({
                     {/* Back button */}
                     <Link
                         href="/heroes"
-                        className="inline-flex items-center gap-2 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] mb-6 transition-colors"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-white hover:bg-[var(--color-primary)] hover:border-[var(--color-primary)] mt-8 mb-6 transition-all font-medium"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                         </svg>
-                        {t('common.back')}
+                        {t('common.back')} to Heroes
                     </Link>
 
                     <div className="flex flex-col md:flex-row gap-8 items-start">
