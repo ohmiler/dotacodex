@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
@@ -85,9 +86,19 @@ export default function Navbar() {
                                         href="/profile"
                                         className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors flex items-center gap-2"
                                     >
-                                        <span className="w-7 h-7 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-xs font-bold text-[var(--color-background)]">
-                                            {(session.user?.name || session.user?.email || '?').charAt(0).toUpperCase()}
-                                        </span>
+                                        {session.user?.image ? (
+                                            <Image
+                                                src={session.user.image}
+                                                alt={session.user.name || 'Avatar'}
+                                                width={28}
+                                                height={28}
+                                                className="rounded-full"
+                                            />
+                                        ) : (
+                                            <span className="w-7 h-7 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-xs font-bold text-[var(--color-background)]">
+                                                {(session.user?.name || session.user?.email || '?').charAt(0).toUpperCase()}
+                                            </span>
+                                        )}
                                         <span>{session.user?.name || session.user?.email}</span>
                                     </Link>
                                     <Link

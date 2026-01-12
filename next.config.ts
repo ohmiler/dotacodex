@@ -40,7 +40,7 @@ const securityHeaders = [
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",  // Next.js requires unsafe-inline/eval
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
-      "img-src 'self' data: https://cdn.cloudflare.steamstatic.com https://steamcdn-a.akamaihd.net",
+      "img-src 'self' data: https://cdn.cloudflare.steamstatic.com https://steamcdn-a.akamaihd.net https://avatars.steamstatic.com https://avatars.akamai.steamstatic.com",
       "connect-src 'self' https://api.opendota.com",
       "frame-ancestors 'none'",
     ].join('; ')
@@ -60,6 +60,16 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'steamcdn-a.akamaihd.net',
         pathname: '/apps/dota2/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'avatars.steamstatic.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'avatars.akamai.steamstatic.com',
+        pathname: '/**',
       },
     ],
   },
