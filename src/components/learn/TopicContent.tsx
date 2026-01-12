@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { LearningTopic } from '@/data/learningTopics';
 import ProgressButton from '@/components/learn/ProgressButton';
+import { ReactNode } from 'react';
 
 interface Props {
     topic: LearningTopic;
@@ -19,83 +20,269 @@ export default function TopicContent({ topic, prevTopic, nextTopic }: Props) {
     const title = locale === 'th' ? topic.titleTh : topic.titleEn;
 
     // Parse markdown-like content to HTML
-    const parseContent = (md: string) => {
-        return md
-            .split('\n')
-            .map((line, i) => {
-                // Headers
-                if (line.startsWith('# ')) {
-                    return <h1 key={i} className="text-3xl font-bold mb-6 mt-8 first:mt-0">{line.slice(2)}</h1>;
-                }
-                if (line.startsWith('## ')) {
-                    return <h2 key={i} className="text-2xl font-semibold mb-4 mt-8 text-[var(--color-primary)]">{line.slice(3)}</h2>;
-                }
-                if (line.startsWith('### ')) {
-                    return <h3 key={i} className="text-xl font-semibold mb-3 mt-6">{line.slice(4)}</h3>;
-                }
+    const parseContent = (md: string): ReactNode[] => {
+        const lines = md.split('\n');
+        const result: ReactNode[] = [];
+        let i = 0;
+        let keyCounter = 0;
 
-                // Lists
-                if (line.startsWith('- **')) {
-                    const match = line.match(/^- \*\*(.+?)\*\*: (.+)$/);
-                    if (match) {
-                        return (
-                            <li key={i} className="mb-2 ml-4 flex items-start">
-                                <span className="text-[var(--color-primary)] mr-2">•</span>
-                                <span><strong className="text-[var(--color-accent)]">{match[1]}</strong>: {match[2]}</span>
-                            </li>
-                        );
-                    }
+        while (i < lines.length) {
+            const line = lines[i];
+            const key = keyCounter++;
+
+            // Table detection (line starts with |)
+            if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
+                const tableLines: string[] = [];
+                while (i < lines.length && lines[i].trim().startsWith('|')) {
+                    tableLines.push(lines[i]);
+                    i++;
                 }
-                if (line.startsWith('- ')) {
-                    return (
-                        <li key={i} className="mb-2 ml-4 flex items-start">
-                            <span className="text-[var(--color-primary)] mr-2">•</span>
-                            <span>{line.slice(2)}</span>
+                result.push(renderTable(tableLines, key));
+                continue;
+            }
+
+            // Code block detection (inline code with backticks)
+            if (line.includes('`')) {
+                const parsed = parseInlineCode(line, key);
+                if (parsed) {
+                    result.push(parsed);
+                    i++;
+                    continue;
+                }
+            }
+
+            // Headers
+            if (line.startsWith('# ')) {
+                result.push(<h1 key={key} className="text-3xl font-bold mb-6 mt-8 first:mt-0">{line.slice(2)}</h1>);
+                i++;
+                continue;
+            }
+            if (line.startsWith('## ')) {
+                result.push(
+                    <h2 key={key} className="text-2xl font-semibold mb-4 mt-8 text-[var(--color-primary)] flex items-center gap-2">
+                        <span className="w-1 h-6 bg-[var(--color-primary)] rounded-full"></span>
+                        {line.slice(3)}
+                    </h2>
+                );
+                i++;
+                continue;
+            }
+            if (line.startsWith('### ')) {
+                result.push(<h3 key={key} className="text-xl font-semibold mb-3 mt-6">{line.slice(4)}</h3>);
+                i++;
+                continue;
+            }
+
+            // Lists with bold definition
+            if (line.startsWith('- **')) {
+                const match = line.match(/^- \*\*(.+?)\*\*: (.+)$/);
+                if (match) {
+                    result.push(
+                        <li key={key} className="mb-3 ml-4 flex items-start gap-3">
+                            <span className="w-2 h-2 rounded-full bg-[var(--color-primary)] mt-2 flex-shrink-0"></span>
+                            <span><strong className="text-[var(--color-accent)]">{match[1]}</strong>: {parseBoldAndCode(match[2])}</span>
+                        </li>
+                    );
+                    i++;
+                    continue;
+                }
+            }
+
+            // Regular lists
+            if (line.startsWith('- ')) {
+                result.push(
+                    <li key={key} className="mb-2 ml-4 flex items-start gap-3">
+                        <span className="w-2 h-2 rounded-full bg-[var(--color-primary)] mt-2 flex-shrink-0"></span>
+                        <span>{parseBoldAndCode(line.slice(2))}</span>
+                    </li>
+                );
+                i++;
+                continue;
+            }
+
+            // Numbered lists
+            if (/^\d+\. /.test(line)) {
+                const match = line.match(/^(\d+)\. \*\*(.+?)\*\*(.*)$/);
+                if (match) {
+                    result.push(
+                        <li key={key} className="mb-4 ml-4 flex items-start gap-3">
+                            <span className="w-7 h-7 rounded-full bg-[var(--color-primary-muted)] text-[var(--color-primary)] font-bold text-sm flex items-center justify-center flex-shrink-0">
+                                {match[1]}
+                            </span>
+                            <span className="pt-0.5"><strong>{match[2]}</strong>{parseBoldAndCode(match[3])}</span>
+                        </li>
+                    );
+                } else {
+                    const numMatch = line.match(/^(\d+)\. (.*)$/);
+                    result.push(
+                        <li key={key} className="mb-3 ml-4 flex items-start gap-3">
+                            <span className="w-7 h-7 rounded-full bg-[var(--color-primary-muted)] text-[var(--color-primary)] font-bold text-sm flex items-center justify-center flex-shrink-0">
+                                {numMatch?.[1]}
+                            </span>
+                            <span className="pt-0.5">{parseBoldAndCode(numMatch?.[2] || '')}</span>
                         </li>
                     );
                 }
+                i++;
+                continue;
+            }
 
-                // Numbered lists
-                if (/^\d+\. /.test(line)) {
-                    const match = line.match(/^(\d+)\. \*\*(.+?)\*\*(.*)$/);
-                    if (match) {
-                        return (
-                            <li key={i} className="mb-3 ml-4 flex items-start">
-                                <span className="text-[var(--color-accent)] font-bold mr-3 min-w-[24px]">{match[1]}.</span>
-                                <span><strong>{match[2]}</strong>{match[3]}</span>
-                            </li>
-                        );
-                    }
-                    return (
-                        <li key={i} className="mb-2 ml-4 flex items-start">
-                            <span className="text-[var(--color-accent)] font-bold mr-3 min-w-[24px]">{line.match(/^\d+/)?.[0]}.</span>
-                            <span>{line.replace(/^\d+\. /, '')}</span>
-                        </li>
-                    );
-                }
+            // Checkmarks (Tips)
+            if (line.startsWith('✅ ')) {
+                result.push(
+                    <div key={key} className="mb-3 p-4 rounded-xl bg-gradient-to-r from-[var(--color-primary-muted)] to-transparent border-l-4 border-[var(--color-primary)] flex items-start gap-3">
+                        <span className="text-lg flex-shrink-0">✅</span>
+                        <span className="text-[var(--color-text)]">{parseBoldAndCode(line.slice(2))}</span>
+                    </div>
+                );
+                i++;
+                continue;
+            }
 
-                // Checkmarks and X marks
-                if (line.startsWith('✅ ') || line.startsWith('❌ ')) {
-                    const isCheck = line.startsWith('✅');
-                    return (
-                        <div
-                            key={i}
-                            className={`mb-2 p-3 rounded-lg ${isCheck ? 'bg-[var(--color-primary-muted)]' : 'bg-[var(--color-secondary-muted)]'}`}
-                        >
-                            {line}
-                        </div>
-                    );
-                }
+            // X marks (Warnings)
+            if (line.startsWith('❌ ')) {
+                result.push(
+                    <div key={key} className="mb-3 p-4 rounded-xl bg-gradient-to-r from-[var(--color-secondary-muted)] to-transparent border-l-4 border-[var(--color-secondary)] flex items-start gap-3">
+                        <span className="text-lg flex-shrink-0">❌</span>
+                        <span className="text-[var(--color-text)]">{parseBoldAndCode(line.slice(2))}</span>
+                    </div>
+                );
+                i++;
+                continue;
+            }
 
-                // Empty lines
-                if (line.trim() === '') {
-                    return <div key={i} className="h-4" />;
-                }
+            // Empty lines
+            if (line.trim() === '') {
+                result.push(<div key={key} className="h-3" />);
+                i++;
+                continue;
+            }
 
-                // Regular paragraphs with bold parsing
-                const parsedLine = line.replace(/\*\*(.+?)\*\*/g, '<strong class="text-[var(--color-accent)]">$1</strong>');
-                return <p key={i} className="mb-3 text-[var(--color-text-muted)] leading-relaxed" dangerouslySetInnerHTML={{ __html: parsedLine }} />;
-            });
+            // Regular paragraphs
+            result.push(
+                <p key={key} className="mb-4 text-[var(--color-text-muted)] leading-relaxed text-lg">
+                    {parseBoldAndCode(line)}
+                </p>
+            );
+            i++;
+        }
+
+        return result;
+    };
+
+    // Parse inline code and bold text
+    const parseBoldAndCode = (text: string): ReactNode => {
+        if (!text) return null;
+
+        // Split by code blocks first, then bold
+        const parts: ReactNode[] = [];
+        let remaining = text;
+        let partKey = 0;
+
+        // Handle inline code `code`
+        const codeRegex = /`([^`]+)`/g;
+        let lastIndex = 0;
+        let match;
+
+        while ((match = codeRegex.exec(text)) !== null) {
+            // Text before code
+            if (match.index > lastIndex) {
+                parts.push(parseBold(text.slice(lastIndex, match.index), partKey++));
+            }
+            // Code block
+            parts.push(
+                <code key={`code-${partKey++}`} className="px-2 py-1 rounded bg-[var(--color-surface-elevated)] text-[var(--color-accent)] font-mono text-sm mx-1">
+                    {match[1]}
+                </code>
+            );
+            lastIndex = match.index + match[0].length;
+        }
+
+        // Remaining text
+        if (lastIndex < text.length) {
+            parts.push(parseBold(text.slice(lastIndex), partKey++));
+        }
+
+        return parts.length > 0 ? parts : parseBold(text, 0);
+    };
+
+    // Parse bold text
+    const parseBold = (text: string, baseKey: number): ReactNode => {
+        const parts: ReactNode[] = [];
+        const boldRegex = /\*\*([^*]+)\*\*/g;
+        let lastIndex = 0;
+        let match;
+        let partKey = 0;
+
+        while ((match = boldRegex.exec(text)) !== null) {
+            if (match.index > lastIndex) {
+                parts.push(<span key={`t-${baseKey}-${partKey++}`}>{text.slice(lastIndex, match.index)}</span>);
+            }
+            parts.push(<strong key={`b-${baseKey}-${partKey++}`} className="text-[var(--color-accent)]">{match[1]}</strong>);
+            lastIndex = match.index + match[0].length;
+        }
+
+        if (lastIndex < text.length) {
+            parts.push(<span key={`t-${baseKey}-${partKey++}`}>{text.slice(lastIndex)}</span>);
+        }
+
+        return parts.length > 0 ? <>{parts}</> : text;
+    };
+
+    // Parse inline code line
+    const parseInlineCode = (line: string, key: number): ReactNode | null => {
+        // If line has inline code, parse it as paragraph
+        if (line.includes('`') && !line.startsWith('#') && !line.startsWith('-') && !line.startsWith('|')) {
+            return (
+                <p key={key} className="mb-4 text-[var(--color-text-muted)] leading-relaxed text-lg">
+                    {parseBoldAndCode(line)}
+                </p>
+            );
+        }
+        return null;
+    };
+
+    // Render markdown table
+    const renderTable = (tableLines: string[], key: number): ReactNode => {
+        if (tableLines.length < 2) return null;
+
+        const parseRow = (row: string): string[] => {
+            return row
+                .split('|')
+                .slice(1, -1) // Remove empty first and last from split
+                .map(cell => cell.trim());
+        };
+
+        const headers = parseRow(tableLines[0]);
+        // Skip separator line (index 1)
+        const rows = tableLines.slice(2).map(parseRow);
+
+        return (
+            <div key={key} className="my-6 overflow-x-auto">
+                <table className="w-full border-collapse">
+                    <thead>
+                        <tr className="bg-[var(--color-surface-elevated)]">
+                            {headers.map((header, i) => (
+                                <th key={i} className="px-4 py-3 text-left text-sm font-semibold text-[var(--color-text)] border-b-2 border-[var(--color-primary)]">
+                                    {parseBoldAndCode(header)}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rows.map((row, rowIndex) => (
+                            <tr key={rowIndex} className="border-b border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors">
+                                {row.map((cell, cellIndex) => (
+                                    <td key={cellIndex} className="px-4 py-3 text-sm text-[var(--color-text-muted)]">
+                                        {parseBoldAndCode(cell)}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        );
     };
 
     return (
