@@ -183,5 +183,23 @@
         "contact_title": "5. ติดต่อเรา",
         "contact_content": "หากคุณมีคำถามใดๆ เกี่ยวกับนโยบายความเป็นส่วนตัวนี้ โปรดติดต่อเราที่ support@dotacodex.com",
         "last_updated": "อัปเดตล่าสุด: 10 มกราคม 2569"
+    },
+    "settings": {
+        "title": "ตั้งค่า",
+        "profile": "โปรไฟล์",
+        "connectedAccounts": "บัญชีที่เชื่อมต่อ",
+        "steamNotConnected": "ยังไม่ได้เชื่อมต่อ",
+        "connectSteam": "เชื่อมต่อบัญชี Steam",
+        "disconnect": "ยกเลิกการเชื่อมต่อ",
+        "unlinking": "กำลังยกเลิก...",
+        "backToHome": "กลับหน้าแรก",
+        "anonymous": "ผู้ใช้ไม่ระบุชื่อ",
+        "steamLinkedSuccess": "เชื่อมต่อบัญชี Steam สำเร็จ!",
+        "steamAlreadyLinked": "บัญชี Steam นี้เชื่อมต่อกับผู้ใช้อื่นอยู่แล้ว",
+        "steamUnlinkedSuccess": "ยกเลิกการเชื่อมต่อ Steam สำเร็จ",
+        "unlinkError": "ไม่สามารถยกเลิกการเชื่อมต่อ Steam ได้",
+        "confirmUnlink": "คุณแน่ใจหรือไม่ว่าต้องการยกเลิกการเชื่อมต่อบัญชี Steam?",
+        "cannotUnlink": "ไม่สามารถยกเลิกได้ - คุณต้องมีรหัสผ่านเพื่อเข้าสู่ระบบโดยไม่ใช้ Steam",
+        "cannotUnlinkWarning": "คุณไม่สามารถยกเลิกการเชื่อมต่อ Steam ได้เนื่องจากคุณยังไม่ได้ตั้งอีเมลและรหัสผ่าน กรุณาตั้งค่าการเข้าสู่ระบบด้วยอีเมลก่อน"
     }
 }

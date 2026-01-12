@@ -183,5 +183,23 @@
         "contact_title": "5. Contact Us",
         "contact_content": "If you have any questions about this Privacy Policy, please contact us at support@dotacodex.com.",
         "last_updated": "Last updated: January 10, 2026"
+    },
+    "settings": {
+        "title": "Settings",
+        "profile": "Profile",
+        "connectedAccounts": "Connected Accounts",
+        "steamNotConnected": "Not connected",
+        "connectSteam": "Connect Steam Account",
+        "disconnect": "Disconnect",
+        "unlinking": "Unlinking...",
+        "backToHome": "Back to Home",
+        "anonymous": "Anonymous User",
+        "steamLinkedSuccess": "Steam account linked successfully!",
+        "steamAlreadyLinked": "This Steam account is already linked to another user.",
+        "steamUnlinkedSuccess": "Steam account disconnected successfully.",
+        "unlinkError": "Failed to disconnect Steam account.",
+        "confirmUnlink": "Are you sure you want to disconnect your Steam account?",
+        "cannotUnlink": "Cannot disconnect - you need a password to login without Steam",
+        "cannotUnlinkWarning": "You cannot disconnect Steam because you don't have an email and password set. Set up email login first."
     }
 }

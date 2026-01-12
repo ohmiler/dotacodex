@@ -95,11 +95,25 @@ export const authOptions: NextAuthOptions = {
             if (user) {
                 token.id = user.id;
             }
+            // Fetch latest user data from database
+            if (token.id) {
+                const dbUser = await db.query.users.findFirst({
+                    where: eq(users.id, token.id as string),
+                });
+                if (dbUser) {
+                    token.steamId = dbUser.steamId;
+                    token.avatar = dbUser.avatar;
+                    token.name = dbUser.name;
+                }
+            }
             return token;
         },
         async session({ session, token }) {
             if (session.user) {
                 session.user.id = token.id as string;
+                (session.user as { steamId?: string | null }).steamId = token.steamId as string | null;
+                session.user.image = token.avatar as string | null;
+                session.user.name = token.name as string | null;
             }
             return session;
         },
