@@ -107,9 +107,19 @@ export default function ProfilePage() {
                     <div className="card p-8 mb-8">
                         <div className="flex items-center gap-6">
                             {/* Avatar */}
-                            <div className="w-20 h-20 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-3xl font-bold">
-                                {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || '?'}
-                            </div>
+                            {user.image ? (
+                                <Image
+                                    src={user.image}
+                                    alt={user.name || 'Avatar'}
+                                    width={80}
+                                    height={80}
+                                    className="rounded-full"
+                                />
+                            ) : (
+                                <div className="w-20 h-20 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-3xl font-bold">
+                                    {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || '?'}
+                                </div>
+                            )}
 
                             {/* User Info */}
                             <div>
