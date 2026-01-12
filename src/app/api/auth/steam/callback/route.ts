@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySteamLogin, getSteamUser } from '@/lib/steam';
 import { db } from '@/lib/db';
-import { users, sessions } from '@/lib/db/schema';
+import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { encode } from 'next-auth/jwt';
 
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
@@ -71,53 +72,52 @@ export async function GET(request: NextRequest) {
         }
 
         // LOGIN MODE: Sign in with Steam
+        let userId: string;
+        let userName: string | null;
+        let userAvatar: string | null;
+
         if (existingUserWithSteam) {
-            // User exists - create session and redirect
-            const sessionToken = uuidv4();
-            const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+            // User exists - use existing data
+            userId = existingUserWithSteam.id;
+            userName = existingUserWithSteam.name;
+            userAvatar = existingUserWithSteam.avatar;
+        } else {
+            // New user - create account
+            userId = uuidv4();
+            userName = steamUser.personaname;
+            userAvatar = steamUser.avatarfull;
 
-            await db.insert(sessions).values({
-                sessionToken,
-                userId: existingUserWithSteam.id,
-                expires,
+            await db.insert(users).values({
+                id: userId,
+                name: userName,
+                avatar: userAvatar,
+                steamId: steamId,
+                // No email or password for Steam-only users
             });
-
-            // Set session cookie and redirect
-            const response = NextResponse.redirect(new URL(callbackUrl, baseUrl));
-            response.cookies.set('next-auth.session-token', sessionToken, {
-                expires,
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'lax',
-                path: '/',
-            });
-
-            return response;
         }
 
-        // New user - create account
-        const userId = uuidv4();
-
-        await db.insert(users).values({
-            id: userId,
-            name: steamUser.personaname,
-            avatar: steamUser.avatarfull,
-            steamId: steamId,
-            // No email or password for Steam-only users
+        // Create JWT token (compatible with NextAuth JWT strategy)
+        const token = await encode({
+            token: {
+                id: userId,
+                name: userName,
+                picture: userAvatar,
+                steamId: steamId,
+            },
+            secret: process.env.NEXTAUTH_SECRET!,
+            maxAge: 30 * 24 * 60 * 60, // 30 days
         });
 
-        // Create session
-        const sessionToken = uuidv4();
         const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-        await db.insert(sessions).values({
-            sessionToken,
-            userId,
-            expires,
-        });
-
         const response = NextResponse.redirect(new URL(callbackUrl, baseUrl));
-        response.cookies.set('next-auth.session-token', sessionToken, {
+
+        // Set the JWT cookie (same name NextAuth uses)
+        const cookieName = process.env.NODE_ENV === 'production'
+            ? '__Secure-next-auth.session-token'
+            : 'next-auth.session-token';
+
+        response.cookies.set(cookieName, token, {
             expires,
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -134,3 +134,4 @@ export async function GET(request: NextRequest) {
         );
     }
 }
+
