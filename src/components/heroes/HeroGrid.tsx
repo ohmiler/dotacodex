@@ -133,7 +133,7 @@ export default function HeroGrid() {
                     <div className="flex-1 min-w-[200px]">
                         <input
                             type="text"
-                            placeholder={t('title') + '...'}
+                            placeholder={t('title') + '…'}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             className="w-full px-4 py-2 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] focus:border-[var(--color-primary)] focus:outline-none"

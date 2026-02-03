@@ -100,8 +100,8 @@ export default function TrendingItems() {
                         key={phase.key}
                         onClick={() => setActivePhase(phase.key)}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${activePhase === phase.key
-                                ? 'bg-[var(--color-primary)] text-black'
-                                : 'bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)] hover:text-white'
+                            ? 'bg-[var(--color-primary)] text-black'
+                            : 'bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)] hover:text-white'
                             }`}
                     >
                         <span>{phase.icon}</span>
@@ -121,8 +121,8 @@ export default function TrendingItems() {
                         {/* Rank Badge for top 3 */}
                         {index < 3 && (
                             <div className={`absolute -top-2 -left-2 z-10 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${index === 0 ? 'bg-yellow-500' :
-                                    index === 1 ? 'bg-gray-400' :
-                                        'bg-amber-700'
+                                index === 1 ? 'bg-gray-400' :
+                                    'bg-amber-700'
                                 }`}>
                                 {index + 1}
                             </div>
@@ -130,14 +130,14 @@ export default function TrendingItems() {
 
                         {/* Item Image */}
                         <div className="relative aspect-square rounded-lg overflow-hidden border border-[var(--color-border)] group-hover:border-[var(--color-primary)] transition-colors bg-[var(--color-surface-elevated)]">
-                            {item.img && (
+                            {item.img ? (
                                 <Image
                                     src={item.img}
                                     alt={item.localizedName || item.name}
                                     fill
                                     className="object-contain p-2 group-hover:scale-110 transition-transform"
                                 />
-                            )}
+                            ) : null}
                         </div>
 
                         {/* Item Info */}

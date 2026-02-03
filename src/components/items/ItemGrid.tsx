@@ -175,7 +175,7 @@ export default function ItemGrid() {
                 <div className="flex-1 min-w-[200px]">
                     <input
                         type="text"
-                        placeholder="ค้นหาไอเทม... / Search items..."
+                        placeholder="ค้นหาไอเทม… / Search items…"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="w-full px-4 py-2 rounded-lg"

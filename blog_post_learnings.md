@@ -10,6 +10,9 @@
 2. [Performance Optimization](#-performance)
 3. [Database Optimization](#-database)
 4. [Next.js 14 Best Practices](#-nextjs-14)
+5. [Authentication (Steam)](#-authentication)
+6. [Content Rendering (Custom Parser)](#-content-rendering)
+7. [Internationalization (i18n)](#-internationalization)
 
 ---
 
@@ -256,12 +259,104 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 
 ---
 
+## 🔐 Authentication
+
+### 1. Steam OpenID Integration
+
+การเชื่อมต่อกับ Steam ใช้โปรโตคอล OpenID 2.0 ซึ่งค่อนข้างเก่าและเฉพาะทาง
+เราใช้ library `openid` และสร้าง wrapper `RelyingParty` ขึ้นมาเอง
+
+**Flow การทำงาน:**
+1. **Redirect:** ส่ง user ไปที่ `https://steamcommunity.com/openid` พร้อม `returnUrl`
+2. **User Approve:** User กด login ที่หน้าเว็บ Steam
+3. **Callback:** Steam ส่ง user กลับมาที่ `returnUrl` พร้อม query params
+4. **Verification:** Server validate parameters กับ Steam อีกครั้งเพื่อยืนยันตัวตน
+
+```typescript
+// src/lib/steam.ts
+export function createSteamRelyingParty(returnUrl: string): RelyingParty {
+    return new RelyingParty(
+        returnUrl,
+        null, // realm
+        true, // stateless
+        false, // strict
+        []
+    );
+}
+```
+
+**สิ่งที่เรียนรู้:**
+- OpenID 2.0 เก่าแต่ยังใช้งานได้ดีกับ Steam
+- ต้องจัดการ `state` และ `returnUrl` ให้ดีเพื่อความปลอดภัย
+- การ validate กลับไปที่ Steam server (Direct Verification) สำคัญมาก ห้ามเชื่อ data จาก client
+
+---
+
+## 📝 Content Rendering
+
+### Custom Markdown Parser Lightweight
+
+แทนที่จะใช้ library หนักๆ อย่าง `react-markdown` หรือ `mdx` เราเลือกเขียน parser เองง่ายๆ สำหรับ Learning Topics
+
+**ข้อดี:**
+- **Control:** ควบคุมการ render ได้ 100% เช่น table, tips blocks (✅/❌), custom styling
+- **Size:** ขนาดเล็กมาก ไม่มี dependency ใหญ่ๆ
+- **Performance:** เร็วเพราะ parse แค่สิ่งที่ใช้ (Headers, Lists, Bold, Inline Code)
+
+```typescript
+// TopicContent.tsx (Concept)
+const parseContent = (md: string) => {
+    // แยกบรรทัดและเช็ค prefix
+    // | ... | -> Table
+    // # ... -> H1
+    // ✅ ... -> Tip Box
+    // ...
+}
+```
+
+**สิ่งที่เรียนรู้:**
+- บางครั้ง "Reinventing the wheel" ก็คุ้มค่าถ้า wheel นั้นเล็กและเฉพาะทางมากๆ
+- สามารถใส่ Custom UI elements (เช่น Tip box สีเขียว/แดง) ได้ง่ายๆ แค่เช็ค prefix string
+
+---
+
+## 🌍 Internationalization
+
+### Next-intl Implementation
+
+ใช้ `next-intl` สำหรับการทำเว็บ 2 ภาษา (TH/EN) โดย setup แบบ Server-side
+
+**Structure:**
+- `messages/en.json` & `messages/th.json`: เก็บ string ทั้งหมด
+- `i18n.ts`: Config การโหลด messages ตาม locale
+- Cookie-based locale detection
+
+```typescript
+// i18n.ts
+export default getRequestConfig(async () => {
+    const cookieStore = await cookies();
+    const locale = cookieStore.get('locale')?.value || 'en';
+    
+    return {
+        locale,
+        messages: (await import(`@/messages/${locale}.json`)).default
+    };
+});
+```
+
+**สิ่งที่เรียนรู้:**
+- แยก Text ออกจาก Code ตั้งแต่วันแรกช่วยให้ชีวิตง่ายขึ้นมาก
+- การใช้ Cookie เก็บ locale ง่ายและ work ดีกับ Next.js App Router
+
+---
+
 ## 💡 สรุป Key Takeaways
 
 1. **Security First** - อย่า hardcode secrets, ซ่อน error details
 2. **Cache Everything** - ISR, unstable_cache, ลด DB reads
 3. **Perceived Performance** - Streaming ทำให้ user รู้สึกเร็ว
-4. **Measure & Optimize** - Log API usage, ดู DB reads
+4. **Choose Tools Wisely** - เขียน parser เองเมื่อต้องการ pure control, ใช้ library เมื่อต้องการมาตรฐาน (Auth)
+5. **Measure & Optimize** - Log API usage, ดู DB reads
 
 ---
 
@@ -271,6 +366,8 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 - [Drizzle ORM](https://orm.drizzle.team/)
 - [Turso Database](https://turso.tech/)
 - [NextAuth.js](https://next-auth.js.org/)
+- [Steam Web API](https://steamcommunity.com/dev)
+- [TailwindCSS v4](https://tailwindcss.com/)
 
 ---
 

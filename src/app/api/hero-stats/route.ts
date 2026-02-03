@@ -106,14 +106,11 @@ export async function GET(request: Request) {
         // Sort by win rate descending
         allHeroes.sort((a, b) => b.winRate - a.winRate);
 
-        // Group by tier
-        const tierGroups = {
-            S: allHeroes.filter(h => h.tier === 'S'),
-            A: allHeroes.filter(h => h.tier === 'A'),
-            B: allHeroes.filter(h => h.tier === 'B'),
-            C: allHeroes.filter(h => h.tier === 'C'),
-            D: allHeroes.filter(h => h.tier === 'D'),
-        };
+        // Group by tier in single pass (O(n) instead of O(5n))
+        const tierGroups: Record<'S' | 'A' | 'B' | 'C' | 'D', typeof allHeroes> = { S: [], A: [], B: [], C: [], D: [] };
+        for (const hero of allHeroes) {
+            tierGroups[hero.tier].push(hero);
+        }
 
         // Top 10 for homepage widgets
         const topByWinRate = allHeroes.slice(0, 10);

@@ -125,7 +125,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
             />
 
             {/* Modal */}
-            <div className="relative w-full max-w-2xl mx-4 bg-[var(--color-surface)] rounded-xl shadow-2xl border border-[var(--color-border)] overflow-hidden animate-fadeIn">
+            <div className="relative w-full max-w-2xl mx-4 bg-[var(--color-surface)] rounded-xl shadow-2xl border border-[var(--color-border)] overflow-hidden animate-fadeIn" style={{ overscrollBehavior: 'contain' }}>
                 {/* Search Input */}
                 <div className="flex items-center gap-3 p-4 border-b border-[var(--color-border)]">
                     <svg className="w-5 h-5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -137,7 +137,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder={t('common.search') + '...'}
+                        placeholder={t('common.search') + '…'}
                         className="flex-1 bg-transparent border-none outline-none text-lg placeholder:text-[var(--color-text-muted)]"
                     />
                     {loading && (

@@ -48,6 +48,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  experimental: {
+    optimizePackageImports: ['next-intl'],
+  },
   images: {
     unoptimized: true, // Disable Vercel image optimization to save quota
     remotePatterns: [

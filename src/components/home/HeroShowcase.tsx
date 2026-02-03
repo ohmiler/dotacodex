@@ -121,7 +121,7 @@ export default function HeroShowcase() {
         >
             {/* Background Image */}
             <div className="absolute inset-0 transition-all duration-700">
-                {currentHero.img && (
+                {currentHero.img ? (
                     <Image
                         src={currentHero.img.replace('/sb.png', '_full.png').replace('/vert.jpg', '_full.png')}
                         alt={currentHero.localizedName}
@@ -129,7 +129,7 @@ export default function HeroShowcase() {
                         className="object-cover object-top"
                         priority
                     />
-                )}
+                ) : null}
                 {/* Gradient Overlay */}
                 <div className={`absolute inset-0 bg-gradient-to-t ${getAttrColor(currentHero.primaryAttr)}`} />
                 <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent" />
@@ -167,9 +167,9 @@ export default function HeroShowcase() {
                     <Link
                         href={`/heroes/${generateHeroSlug(currentHero.localizedName, currentHero.id)}`}
                         className={`inline-flex items-center gap-2 px-6 py-3 font-semibold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 ${currentHero.primaryAttr === 'str' ? 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-400 hover:to-red-500' :
-                                currentHero.primaryAttr === 'agi' ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-400 hover:to-green-500' :
-                                    currentHero.primaryAttr === 'int' ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-400 hover:to-blue-500' :
-                                        'bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-400 hover:to-purple-500'
+                            currentHero.primaryAttr === 'agi' ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-400 hover:to-green-500' :
+                                currentHero.primaryAttr === 'int' ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-400 hover:to-blue-500' :
+                                    'bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-400 hover:to-purple-500'
                             }`}
                     >
                         View Hero Guide

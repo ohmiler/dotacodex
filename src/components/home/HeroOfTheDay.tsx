@@ -110,14 +110,14 @@ export default function HeroOfTheDay() {
                         href={`/heroes/${generateHeroSlug(hero.localizedName, hero.id)}`}
                         className="relative w-full sm:w-48 aspect-[16/9] rounded-lg overflow-hidden border border-[var(--color-border)] group-hover:border-[var(--color-primary)] transition-colors"
                     >
-                        {hero.img && (
+                        {hero.img ? (
                             <Image
                                 src={hero.img}
                                 alt={hero.localizedName}
                                 fill
                                 className="object-cover group-hover:scale-105 transition-transform duration-300"
                             />
-                        )}
+                        ) : null}
                     </Link>
 
                     {/* Hero Info */}
